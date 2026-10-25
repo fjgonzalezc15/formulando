@@ -228,7 +228,7 @@ const ROM=['','I','II','III','IV','V','VI','VII','VIII'];
 const PRE=['','mono','di','tri','tetra','penta','hexa','hepta','octa'];
 const gcd=(a,b)=>b?gcd(b,a%b):a;
 const pick=a=>a[Math.floor(Math.random()*a.length)];
-const fhtml=f=>'<span class="f">'+f.replace(/(\d+)/g,'<sub>$1</sub>')+'</span>';
+const fhtml=f=>'<span class="f">'+f.replace(/(·\s*)?(\d+)/g,(m,d,n)=>d?m:'<sub>'+n+'</sub>')+'</span>';
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 
 /* ---------- datos ---------- */
@@ -247,12 +247,13 @@ const BLOCKS=[
  {id:'hidruros',label:'Hidruros',course:2},
  {id:'oxidos',label:'Óxidos',course:2},
  {id:'peroxidos',label:'Peróxidos',course:4},
- {id:'sales',label:'Sales binarias',course:2},
+ {id:'sales',label:'Otras binarias',course:2},
  {id:'hidroxidos',label:'Hidróxidos',course:3},
  {id:'oxoacidos',label:'Oxoácidos',course:4},
  {id:'oxosales',label:'Oxosales neutras',course:4},
  {id:'salesacidas',label:'Sales ácidas',course:5},
- {id:'superiores',label:'Sales básicas y dobles',course:5}
+ {id:'superiores',label:'Sales básicas y dobles',course:5},
+ {id:'hidratadas',label:'Sales hidratadas',course:5}
 ];
 
 const DB=[]; const seen=new Set();
@@ -296,15 +297,15 @@ function binary(cat,catOs,an,anV,opt){
 // Hidruros metálicos
 METALS.forEach(m=>m.gen.forEach(o=>binary(m,o,{s:'H',base:'hidruro',stock:'hidruro'},1,{block:'hidruros',sub:'Hidruro metálico',ionic:true})));
 // Hidrácidos (grupos 16-17)
-[['F','fluoruro','fluorhídrico',1],['Cl','cloruro','clorhídrico',1],['Br','bromuro','bromhídrico',1],['I','yoduro','yodhídrico',1],['S','sulfuro','sulfhídrico',2],['Se','selenuro','selenhídrico',2],['Te','telururo','telurhídrico',2]].forEach(([s,n,ac,v])=>{
+[['F','fluoruro','fluorhídrico',1],['Cl','cloruro','clorhídrico',1],['Br','bromuro','bromhídrico',1],['I','yoduro','yodhídrico',1],['S','sulfuro','sulfhídrico',2,'sulfano'],['Se','selenuro','selenhídrico',2,'selano'],['Te','telururo','telurhídrico',2,'telano']].forEach(([s,n,ac,v,sus])=>{
   const f='H'+(v>1?v:'')+s;
   const est=v>1?[n+' de dihidrógeno',n+' de hidrógeno']:[n+' de hidrógeno'];
-  add({f,block:'hidruros',sub:'Hidrácido',names:{est,trad:['ácido '+ac]},why:`El H actúa con <span class="pos">+1</span> y ${s} con <span class="neg">−${v}</span>: ${fhtml(f)}. En disolución acuosa se llama ácido ${ac}.`});
+  add({f,block:'hidruros',sub:v>1?'Calcogenuro de hidrógeno':'Haluro de hidrógeno',names:{est,...(sus?{sus:[sus]}:{})},aq:['ácido '+ac],why:`El H actúa con <span class="pos">+1</span> y ${s} con <span class="neg">−${v}</span>: ${fhtml(f)}. «Ácido ${ac}» es el nombre de su disolución acuosa, no del compuesto.`});
 });
-add({f:'H2O',block:'hidruros',sub:'Hidruro no metálico',names:{est:['monóxido de dihidrógeno','óxido de dihidrógeno'],trad:['agua','oxidano']},why:'Nombre aceptado: agua (oxidano).'});
+add({f:'H2O',block:'hidruros',sub:'Calcogenuro de hidrógeno',names:{est:['óxido de dihidrógeno','monóxido de dihidrógeno'],trad:['agua','oxidano']},why:'Nombre aceptado: agua (oxidano).'});
 // Hidruros volátiles (grupos 13-15)
-[['NH3','trihidruro de nitrógeno',['amoniaco','amoníaco','azano'],'N',3],['PH3','trihidruro de fósforo',['fosfano'],'P',3],['AsH3','trihidruro de arsénico',['arsano'],'As',3],['SbH3','trihidruro de antimonio',['estibano'],'Sb',3],['CH4','tetrahidruro de carbono',['metano'],'C',4],['SiH4','tetrahidruro de silicio',['silano'],'Si',4],['BH3','trihidruro de boro',['borano'],'B',3]].forEach(([f,e,t,s,v])=>{
-  add({f,block:'hidruros',sub:'Hidruro volátil',names:{est:[e],trad:t},why:`${s} actúa con <span class="neg">−${v}</span> y el H con <span class="pos">+1</span>. Por convenio se escribe ${fhtml(f)}. Nombre aceptado: ${t[0]}.`});
+[['NH3','trihidruro de nitrógeno',['azano','amoniaco','amoníaco'],'N',3],['PH3','trihidruro de fósforo',['fosfano'],'P',3],['AsH3','trihidruro de arsénico',['arsano'],'As',3],['SbH3','trihidruro de antimonio',['estibano'],'Sb',3],['CH4','tetrahidruro de carbono',['metano'],'C',4],['SiH4','tetrahidruro de silicio',['silano'],'Si',4],['BH3','trihidruro de boro',['borano'],'B',3]].forEach(([f,e,t,s,v])=>{
+  add({f,block:'hidruros',sub:'Hidruro progenitor',names:{est:[e],sus:t},why:`${s} actúa con <span class="neg">−${v}</span> y el H con <span class="pos">+1</span>. Por convenio se escribe ${fhtml(f)}. Nombre de sustitución: ${t[0]}.`});
 });
 // Óxidos metálicos
 const OX={s:'O',base:'óxido',stock:'óxido',isOx:true};
@@ -312,18 +313,18 @@ METALS.forEach(m=>m.oxg.forEach(o=>binary(m,o,OX,2,{block:'oxidos',sub:'Óxido m
 // Óxidos no metálicos
 NMOX.forEach(([s,n,os])=>{const nm={s,n,os,alt:[]}; os.forEach(o=>binary(nm,o,OX,2,{block:'oxidos',sub:'Óxido no metálico'}));});
 // Haluros de oxígeno (IUPAC 2005)
-add({f:'OF2',block:'oxidos',sub:'Haluro de oxígeno',names:{est:['difluoruro de oxígeno']},why:'El F es más electronegativo que el O, así que se escribe a la derecha: '+fhtml('OF2')+'.'});
+add({f:'OF2',block:'oxidos',sub:'Haluro de oxígeno',names:{est:['difluoruro de oxígeno']},why:'En la secuencia de la IUPAC el F se alcanza antes que el O, así que se escribe a la derecha: '+fhtml('OF2')+'. Es el único caso en que el O actúa con <span class="pos">+2</span>.'});
 [['Cl','cloruro'],['Br','bromuro'],['I','yoduro']].forEach(([s,n])=>[1,3,5,7].forEach(p=>{
   const f='O'+(p>1?p:'')+s+'2', old=s+'2O'+(p>1?p:'');
   add({f,old,block:'oxidos',sub:'Haluro de oxígeno',names:{est:['di'+n+' de '+(p>1?PRE[p]:'')+'oxígeno']},
     why:`${s} actúa con <span class="pos">+${p}</span> y el O con <span class="neg">−2</span>, lo que daría ${fhtml(old)}. Según la IUPAC 2005 el halógeno va a la derecha: ${fhtml(f)}, y se nombra como ${n} de oxígeno.`});
 }));
 // Peróxidos
-[['H2O2','dióxido de dihidrógeno',['peróxido de hidrógeno','agua oxigenada'],'H',1],['Li2O2','dióxido de dilitio',['peróxido de litio'],'Li',1],['Na2O2','dióxido de disodio',['peróxido de sodio'],'Na',1],['K2O2','dióxido de dipotasio',['peróxido de potasio'],'K',1],
+[['H2O2','dióxido de dihidrógeno',['peróxido de hidrógeno'],'H',1],['Li2O2','dióxido de dilitio',['peróxido de litio'],'Li',1],['Na2O2','dióxido de disodio',['peróxido de sodio'],'Na',1],['K2O2','dióxido de dipotasio',['peróxido de potasio'],'K',1],
  ['MgO2','dióxido de magnesio',['peróxido de magnesio'],'Mg',2],['CaO2','dióxido de calcio',['peróxido de calcio'],'Ca',2],['SrO2','dióxido de estroncio',['peróxido de estroncio'],'Sr',2],['BaO2','dióxido de bario',['peróxido de bario'],'Ba',2],['ZnO2','dióxido de cinc',['peróxido de cinc','peróxido de zinc'],'Zn',2],
  ['CuO2','dióxido de cobre',['peróxido de cobre(II)'],'Cu',2],['Sn(O2)2','bis(dióxido) de estaño',['peróxido de estaño(IV)'],'Sn',4]].forEach(([f,e,st,s,v])=>{
   const est=[e]; if(f==='ZnO2') est.push('dióxido de zinc');
-  add({f,course:4,block:'peroxidos',sub:'Peróxido',names:{est,stock:st},why:`El ion peróxido ${fhtml('O2')}<sup>2−</sup> lleva el O con <span class="neg">−1</span>. ${s} actúa con <span class="pos">+${v}</span>. El grupo ${fhtml('O2')} no se simplifica: ${fhtml(f)}.`});
+  add({f,course:4,block:'peroxidos',sub:'Peróxido',names:{est,stock:st},...(f==='H2O2'?{aq:['agua oxigenada']}:{}),why:`El ion peróxido ${fhtml('O2')}<sup>2−</sup> lleva el O con <span class="neg">−1</span>. ${s} actúa con <span class="pos">+${v}</span>. El grupo ${fhtml('O2')} no se simplifica: ${fhtml(f)}.`});
 });
 // Sales binarias metal + no metal
 METALS.forEach(m=>m.gen.forEach(o=>ANIONS.forEach(([s,n,v])=>{
@@ -331,10 +332,10 @@ METALS.forEach(m=>m.gen.forEach(o=>ANIONS.forEach(([s,n,v])=>{
   binary(m,o,{s,base:n,stock:n},v,{block:'sales',sub:'Sal binaria',ionic:true});
 })));
 // No metal + no metal
-[['BrF3','trifluoruro de bromo','fluoruro de bromo(III)'],['BrCl','monocloruro de bromo','cloruro de bromo(I)'],['ClF3','trifluoruro de cloro','fluoruro de cloro(III)'],['IF7','heptafluoruro de yodo','fluoruro de yodo(VII)'],
+[['BrF3','trifluoruro de bromo','fluoruro de bromo(III)'],['BrCl',['monocloruro de bromo','cloruro de bromo'],'cloruro de bromo(I)'],['ClF3','trifluoruro de cloro','fluoruro de cloro(III)'],['IF7','heptafluoruro de yodo','fluoruro de yodo(VII)'],
  ['CCl4','tetracloruro de carbono','cloruro de carbono(IV)'],['CS2','disulfuro de carbono','sulfuro de carbono(IV)'],['PCl3','tricloruro de fósforo','cloruro de fósforo(III)'],['PCl5','pentacloruro de fósforo','cloruro de fósforo(V)'],
- ['NCl3','tricloruro de nitrógeno','cloruro de nitrógeno(III)'],['SF6','hexafluoruro de azufre','fluoruro de azufre(VI)'],['As2Se3','triseleniuro de diarsénico','seleniuro de arsénico(III)'],['SiCl4','tetracloruro de silicio','cloruro de silicio']].forEach(([f,e,st])=>{
-  add({f,block:'sales',sub:'No metal + no metal',names:{est:[e],stock:[st]},why:`Se escribe a la derecha el elemento más electronegativo (más prioritario): ${fhtml(f)}.`});
+ ['NCl3','tricloruro de nitrógeno','cloruro de nitrógeno(III)'],['SF6','hexafluoruro de azufre','fluoruro de azufre(VI)'],['As2Se3','triselenuro de diarsénico','selenuro de arsénico(III)'],['SiCl4','tetracloruro de silicio','cloruro de silicio',['tetraclorosilano']]].forEach(([f,e,st,sus])=>{
+  add({f,block:'sales',sub:'No metal + no metal',names:{est:[].concat(e),stock:[st],...(sus?{sus}:{})},why:`Se escribe a la derecha el elemento que se alcanza antes en la secuencia de la IUPAC: ${fhtml(f)}.`});
 });
 
 // Hidróxidos (3º ESO)
@@ -356,13 +357,14 @@ const ACIDS=[];
 function acid(a,X,b,c,trad,course,root,el,anion,extra){
   const f='H'+(a>1?a:'')+X+(b>1?b:'')+'O'+(c>1?c:'');
   const z=(2*c-a)/b;
-  const names={trad:trad.map(t=>'ácido '+t)};
+  const names={}; if(trad.length) names.trad=trad.map(t=>'ácido '+t);
   if(root) names.hid=[pre(a)+'hidrogeno('+pre(c)+'oxido'+pre(b)+root+')'];
   if(el&&b===1){ const ox=c-a; names.adi=[pre(a)+'hidroxido'+(ox>0?pre(ox)+'oxido':'')+el]; }
   const why=`Número de oxidación de ${X}: z = (2·c − a)/b = (2·${c} − ${a})/${b} = <span class="pos">+${z}</span>. `+(names.hid?`En la nomenclatura de hidrógeno se cuentan los H (${a}), los O (${c}) y los átomos de ${X} (${b}): ${names.hid[0]}.`:'');
-  const A={f,a,X,b,c,z,course,root,anion,trad:trad[0],names,why,...(extra||{})};
+  const A={f,a,X,b,c,z,course,root,anion,trad:trad[0]?'ácido '+trad[0]:names.hid[0],names,why,...(extra||{})};
   ACIDS.push(A);
-  add({f,course,block:'oxoacidos',sub:course<5?'Oxoácido':'Oxoácido (Bachillerato)',names,why});
+  const bad=(extra&&extra.bad)||[];
+  add({f,course,block:'oxoacidos',sub:course<5?'Oxoácido':'Oxoácido (Bachillerato)',names,why:why+(bad.length?' '+bad[0].warn:''),bad});
   return A;
 }
 // 4º ESO
@@ -381,41 +383,39 @@ acid(2,'S',1,4,['sulfúrico'],4,'sulfato','azufre',['sulfato']);
 acid(1,'N',1,2,['nitroso'],4,'nitrato','nitrógeno',['nitrito']);
 acid(1,'N',1,3,['nítrico'],4,'nitrato','nitrógeno',['nitrato']);
 acid(2,'C',1,3,['carbónico'],4,'carbonato','carbono',['carbonato']);
-acid(3,'P',1,3,['fosforoso','ortofosforoso'],4,'fosfato','fósforo',['fosfito','ortofosfito']);
-acid(3,'P',1,4,['fosfórico','ortofosfórico'],4,'fosfato','fósforo',['fosfato','ortofosfato']);
+acid(3,'P',1,3,['fosforoso'],4,'fosfato','fósforo',['fosfito']);
+acid(3,'P',1,4,['fosfórico'],4,'fosfato','fósforo',['fosfato']);
 // Bachillerato
-acid(2,'Se',1,3,['selenioso'],5,'selenato','selenio',['selenito']);
+acid(2,'Se',1,3,['selenoso','selenioso'],5,'selenato','selenio',['selenito']);
 acid(2,'Se',1,4,['selénico'],5,'selenato','selenio',['selenato']);
 acid(2,'Te',1,3,['teluroso'],5,'telurato','teluro',['telurito']);
 acid(2,'Te',1,4,['telúrico'],5,'telurato','teluro',['telurato']);
 acid(2,'N',2,2,['hiponitroso'],5,'nitrato',null,['hiponitrito']);
-[['P','fósforo','fosfato','fosfor','fosfór'],['As','arsénico','arseniato','arsenios','arsénic'],['Sb','antimonio','antimoniato','antimonios','antimónic']].forEach(([X,el,root,oso,ico])=>{
-  const os=X==='P'?'fosforoso':oso+'o', ic=X==='P'?'fosfórico':ico+'o';
-  const ito=X==='P'?'fosfito':(X==='As'?'arsenito':'antimonito'), ato=X==='P'?'fosfato':(X==='As'?'arseniato':'antimoniato');
-  acid(1,X,1,2,['meta'+os],5,root,el,['meta'+ito]);
-  acid(4,X,2,5,['di'+os],5,root,null,['di'+ito]);
-  acid(1,X,1,3,['meta'+ic],5,root,el,['meta'+ato]);
-  acid(4,X,2,7,['di'+ic],5,root,null,['di'+ato]);
-  if(X!=='P'){ acid(3,X,1,3,[os,'orto'+os],5,root,el,[ito,'orto'+ito]); acid(3,X,1,4,[ic,'orto'+ic],5,root,el,[ato,'orto'+ato]); }
+// P, As y Sb: con +3 solo el ácido sin prefijo tiene nombre vulgar aceptado; con +5, los tres del P y solo el sin prefijo del As y del Sb
+const NOVULG=(n,X)=>({bad:[{n:'ácido '+n,warn:'La IUPAC no acepta el nombre «ácido '+n+'»: este ácido del '+X+' se nombra con la nomenclatura de hidrógeno o de adición.'}]});
+[['P','fósforo','fosfato','fosforoso','fosfórico','fosfito','fosfato'],['As','arsénico','arsenato','arsenoso','arsénico','arsenito','arsenato'],['Sb','antimonio','antimonato','antimonoso','antimónico','antimonito','antimonato']].forEach(([X,el,root,os,ic,ito,ato])=>{
+  acid(1,X,1,2,[],5,root,el,null,NOVULG('meta'+os,X));
+  acid(4,X,2,5,[],5,root,null,null,NOVULG('di'+os,X));
+  if(X==='P'){ acid(1,X,1,3,['metafosfórico'],5,root,el,['metafosfato']); acid(4,X,2,7,['difosfórico'],5,root,null,['difosfato']); }
+  else{ acid(1,X,1,3,[],5,root,el,null,NOVULG('meta'+ic,X)); acid(4,X,2,7,[],5,root,null,null,NOVULG('di'+ic,X));
+    acid(3,X,1,3,[os,X==='As'?'arsenioso':'antimonioso'],5,root,el,[ito]); acid(3,X,1,4,[ic],5,root,el,[ato]); }
 });
 acid(2,'Si',1,3,['metasilícico'],5,'silicato','silicio',['metasilicato']);
-acid(4,'Si',1,4,['silícico','ortosilícico'],5,'silicato','silicio',['silicato','ortosilicato']);
+acid(4,'Si',1,4,['silícico'],5,'silicato','silicio',['silicato']);
 acid(1,'B',1,2,['metabórico'],5,'borato','boro',['metaborato']);
-acid(3,'B',1,3,['bórico','ortobórico'],5,'borato','boro',['borato','ortoborato']);
-acid(2,'B',4,7,['tetrabórico'],5,'borato',null,['tetraborato']);
+acid(3,'B',1,3,['bórico'],5,'borato','boro',['borato']);
 acid(2,'S',2,7,['disulfúrico'],5,'sulfato',null,['disulfato']);
-acid(2,'Mn',1,4,['mangánico'],5,'manganato','manganeso',['manganato']);
-acid(1,'Mn',1,4,['permangánico'],5,'manganato','manganeso',['permanganato']);
-acid(1,'Cr',1,2,['cromoso'],5,'cromato','cromo',['cromito']);
-acid(2,'Cr',1,4,['crómico'],5,'cromato','cromo',['cromato']);
-acid(2,'Cr',2,7,['dicrómico'],5,'cromato',null,['dicromato']);
-// Ácidos especiales (solo nombre tradicional)
-[['H2S2O3','tiosulfúrico'],['H2S2O8','peroxodisulfúrico'],['H2SO5','peroxosulfúrico'],['HOCN','ciánico'],['HSCN','tiociánico']].forEach(([f,t])=>{
-  add({f,course:5,block:'oxoacidos',sub:'Oxoácido especial',names:{trad:['ácido '+t]},why:'Es un ácido especial: se nombra con su nombre tradicional, ácido '+t+'.'});
+// Mn y Cr: sus ácidos no tienen nombre vulgar aceptado; sí sus aniones
+const NOVULG2=n=>({bad:[{n:'ácido '+n,warn:'«Ácido '+n+'» no es un nombre aceptado por la IUPAC: este ácido se nombra con la nomenclatura de hidrógeno. Sí se aceptan los nombres de sus aniones (permanganato, manganato(VI), cromato, dicromato).'}]});
+acid(2,'Mn',1,4,[],5,'manganato','manganeso',['manganato(VI)'],NOVULG2('mangánico'));
+acid(1,'Mn',1,4,[],5,'manganato','manganeso',['permanganato'],NOVULG2('permangánico'));
+acid(2,'Cr',1,4,[],5,'cromato','cromo',['cromato'],NOVULG2('crómico'));
+acid(2,'Cr',2,7,[],5,'cromato',null,['dicromato'],NOVULG2('dicrómico'));
+// Otros ácidos con nombre vulgar aceptado
+[['H2S2O3','tiosulfúrico'],['H2S2O8','peroxidisulfúrico','peroxodisulfúrico'],['H2SO5','peroxisulfúrico','peroxosulfúrico'],['HOCN','ciánico'],['HSCN','tiociánico']].forEach(([f,t,old])=>{
+  add({f,course:5,block:'oxoacidos',sub:'Otro ácido con nombre aceptado',names:{trad:['ácido '+t]},alts:old?[{n:'ácido '+old,note:'Correcto, aunque el Libro Rojo de 2005 usa el prefijo peroxi-: <b>ácido '+t+'</b>.'}]:[],why:'Es un ácido con nombre vulgar aceptado por la IUPAC: ácido '+t+'.'});
 });
-add({f:'HCN',course:5,block:'oxoacidos',sub:'Ácido especial',names:{est:['cianuro de hidrógeno'],trad:['ácido cianhídrico']},why:'El ion cianuro, CN<sup>−</sup>, se comporta como un haluro: HCN es el cianuro de hidrógeno y, en disolución, ácido cianhídrico.'});
-// Las variantes arseniato/arsenato y antimoniato/antimonato se aceptan igual
-DB.forEach(c=>Object.keys(c.names).forEach(k=>{const extra=[];c.names[k].forEach(n=>{if(/arseniato/.test(n))extra.push(n.replace(/arseniato/g,'arsenato'));if(/antimoniato/.test(n))extra.push(n.replace(/antimoniato/g,'antimonato'));});extra.forEach(x=>{if(!c.names[k].includes(x))c.names[k].push(x);});}));
+add({f:'HCN',course:5,block:'oxoacidos',sub:'Otro ácido',names:{est:['cianuro de hidrógeno']},aq:['ácido cianhídrico'],why:'El HCN no tiene nombre vulgar aceptado: se nombra como compuesto binario, cianuro de hidrógeno. «Ácido cianhídrico» solo podría usarse para su disolución acuosa.'});
 
 // ---- Oxosales neutras ----
 function oxosal(A,m,o){
@@ -429,7 +429,8 @@ function oxosal(A,m,o){
     trad:[].concat(...A.anion.map(t=>mn.map(n=>t+' de '+n+(multi?'('+ROM[o]+')':''))))
   };
   if(multi) names.carga=[].concat(...A.anion.map(t=>mn.map(n=>t+' de '+n+'('+o+'+)')));
-  const why=`Del ácido ${A.trad} (${fhtml(A.f)}) se quitan los ${q} H y queda el anión ${fhtml(an)}<sup>${q>1?q:''}−</sup>, ${A.anion[0]} (-oso → -ito, -ico → -ato). ${m.s} actúa con <span class="pos">+${o}</span>. Se intercambian las cargas`+(g>1?' y se simplifica':'')+`: ${fhtml(f)}.`;
+  names.adi=mn.map(n=>comp+'('+q+'−) de '+n+(multi?'('+o+'+)':''));
+  const why=`Del ${A.trad} (${fhtml(A.f)}) se quitan los ${q} H y queda el anión ${fhtml(an)}<sup>${q>1?q:''}−</sup>, ${A.anion[0]} (-oso → -ito, -ico → -ato). ${m.s} actúa con <span class="pos">+${o}</span>. Se intercambian las cargas`+(g>1?' y se simplifica':'')+`: ${fhtml(f)}.`;
   add({f,course:A.course,block:'oxosales',sub:'Oxosal neutra',names,why});
 }
 ACIDS.filter(A=>A.root&&A.anion).forEach(A=>SALT_METALS.forEach(m=>m.gen.forEach(o=>{
@@ -438,13 +439,13 @@ ACIDS.filter(A=>A.root&&A.anion).forEach(A=>SALT_METALS.forEach(m=>m.gen.forEach
 })));
 
 // ---- Sales ácidas de hidrácidos ----
-[['S','sulfuro','sulfhídrico'],['Se','selenuro','selenhídrico'],['Te','telururo','telurhídrico']].forEach(([X,n,ac])=>SALT_METALS.forEach(m=>m.gen.forEach(o=>{
+[['S','sulfuro','sulfanuro'],['Se','selenuro','selanuro'],['Te','telururo','telanuro']].forEach(([X,n,sn])=>SALT_METALS.forEach(m=>m.gen.forEach(o=>{
   if(['Cr','Ni','Co','Ag'].includes(m.s)) return;
   const an='H'+X, f=m.s+(o>1?'('+an+')'+o:an), multi=m.os.length>1, mn=[m.n,...m.alt];
-  const nm='hidrogeno'+n;
-  const names={stock:mn.map(k=>nm+' de '+k+(multi?'('+ROM[o]+')':'')),comp:mn.map(k=>(o>1?MULT[o]+'('+nm+')':nm)+' de '+k)};
-  add({f,course:5,block:'salesacidas',sub:'Sal ácida de hidrácido',names,hidro:true,
-    why:`El ácido ${ac} (${fhtml('H2'+X)}) pierde un solo H y queda el anión ${fhtml(an)}<sup>−</sup>, hidrogeno${n}. ${m.s} actúa con <span class="pos">+${o}</span>: ${fhtml(f)}.`});
+  const hn='hidrogeno('+n+')', nm='hidrogeno'+n, st=t=>mn.map(k=>t+' de '+k+(multi?'('+ROM[o]+')':''));
+  const names={hid:[...st(hn),...mn.map(k=>(o>1?MULT[o]+'['+hn+']':hn)+' de '+k)],sus:st(sn),stock:st(nm),comp:mn.map(k=>(o>1?MULT[o]+'('+nm+')':nm)+' de '+k)};
+  add({f,course:5,block:'salesacidas',sub:'Hidrogenosal de calcogenuro',names,hidro:true,
+    why:`El ${fhtml('H2'+X)} pierde un solo H y queda el anión ${fhtml(an)}<sup>−</sup>: ${hn} (de hidrógeno) o ${sn} (de sustitución). ${m.s} actúa con <span class="pos">+${o}</span>: ${fhtml(f)}.`});
 })));
 
 // ---- Oxosales ácidas ----
@@ -456,42 +457,54 @@ function oxacida(A,h,m,o){
   const simple=[pre(h)+'hidrogeno'+A.anion[0]];
   const full=pre(h)+'hidrogeno('+pre(A.c)+'oxido'+A.root+')';
   const names={
-    stock:[].concat(...[...simple,full].map(t=>mn.map(n=>t+' de '+n+(multi?'('+ROM[o]+')':'')))),
+    stock:[].concat(...simple.map(t=>mn.map(n=>t+' de '+n+(multi?'('+ROM[o]+')':'')))),
+    hid:[...mn.map(n=>(y>1?MULT[y]+'['+full+']':full)+' de '+pre(x)+n),...mn.map(n=>full+' de '+n+(multi?'('+ROM[o]+')':''))],
     comp:[].concat(...simple.map(t=>mn.map(n=>(y>1?MULT[y]+'('+t+')':t)+' de '+pre(x)+n)))
   };
   add({f,course:5,block:'salesacidas',sub:'Oxosal ácida',names,hidro:true,
-    why:`El ácido ${A.trad} (${fhtml(A.f)}) pierde solo ${A.a-h} de sus ${A.a} H: queda el anión ${fhtml(an)}<sup>${q>1?q:''}−</sup>, ${simple[0]}. ${m.s} actúa con <span class="pos">+${o}</span>: ${fhtml(f)}.`});
+    why:`El ${A.trad} (${fhtml(A.f)}) pierde solo ${A.a-h} de sus ${A.a} H: queda el anión ${fhtml(an)}<sup>${q>1?q:''}−</sup>, ${simple[0]}. ${m.s} actúa con <span class="pos">+${o}</span>: ${fhtml(f)}.`});
 }
-const AC=t=>ACIDS.find(A=>A.trad===t);
+const AC=t=>ACIDS.find(A=>A.trad==='ácido '+t);
 [['sulfúrico',1],['sulfuroso',1],['carbónico',1],['fosfórico',1],['fosfórico',2]].forEach(([t,h])=>SALT_METALS.forEach(m=>m.gen.forEach(o=>{
   if(['Ni','Co'].includes(m.s)) return;
   oxacida(AC(t),h,m,o);
 })));
 
 // ---- Oxosales básicas, sales dobles (lista fija) ----
-function fixed(f,sub,names,why,extraF){add({f,course:5,block:'superiores',sub,names,why,altF:extraF||[]});}
-const hyph=(...v)=>{const o=[];v.forEach(s=>{o.push(s);if(s.includes('-'))o.push(s.replace(/-/g,' '));});return o;};
-fixed('MgNO3(OH)','Oxosal básica',{comp:hyph('hidróxido-nitrato de magnesio'),trad:['hidroxinitrato de magnesio']},'Contiene a la vez el anión nitrato y el ion hidróxido. En el nombre los aniones van por orden alfabético, unidos por guion.');
-fixed('Cu2(OH)2SO4','Oxosal básica',{comp:hyph('dihidróxido-sulfato de cobre(II)','dihidróxido-sulfato de dicobre'),trad:['dihidroxisulfato de cobre(II)']},'Dos iones Cu<sup>2+</sup> compensan las cargas de dos OH<sup>−</sup> y un SO<sub>4</sub><sup>2−</sup>.',['Cu2SO4(OH)2']);
-fixed('CaCl(OH)','Oxosal básica',{comp:hyph('cloruro-hidróxido de calcio'),trad:['hidroxicloruro de calcio']},'Ca<sup>2+</sup> con un Cl<sup>−</sup> y un OH<sup>−</sup>. Por orden alfabético: cloruro antes que hidróxido.');
-fixed('MgCl(OH)','Oxosal básica',{comp:hyph('cloruro-hidróxido de magnesio'),trad:['hidroxicloruro de magnesio']},'Mg<sup>2+</sup> con un Cl<sup>−</sup> y un OH<sup>−</sup>.');
-fixed('FeCO3(OH)','Oxosal básica',{comp:hyph('carbonato-hidróxido de hierro(III)'),trad:['hidroxicarbonato de hierro(III)']},'Fe<sup>3+</sup> compensa un CO<sub>3</sub><sup>2−</sup> y un OH<sup>−</sup>.');
-fixed('Al(OH)SO4','Oxosal básica',{comp:hyph('hidróxido-sulfato de aluminio'),trad:['hidroxisulfato de aluminio']},'Al<sup>3+</sup> compensa un OH<sup>−</sup> y un SO<sub>4</sub><sup>2−</sup>.',['AlSO4(OH)']);
+function fixed(f,sub,names,why,extraF){
+  const alts=[]; Object.values(names).forEach(l=>l.forEach(n=>{ const i=n.indexOf(' de '), h=n.slice(0,i); if(i>0&&h.includes(' ')) alts.push({n:h.replace(/ /g,'-')+n.slice(i),note:'Correcto, aunque según la IUPAC 2005 los aniones se separan con un espacio, sin guion: <b>'+n+'</b>.'}); }));
+  add({f,course:5,block:'superiores',sub,names,why,alts,altF:extraF||[]});}
+const hyph=(...v)=>v.map(s=>s.replace(/-/g,' '));
+fixed('MgNO3(OH)','Oxosal básica',{comp:hyph('hidróxido-nitrato de magnesio')},'Contiene a la vez el anión nitrato y el ion hidróxido. En el nombre los aniones van por orden alfabético, separados por un espacio.');
+fixed('Cu2(OH)2SO4','Oxosal básica',{comp:hyph('dihidróxido-sulfato de cobre(II)','dihidróxido-sulfato de dicobre')},'Dos iones Cu<sup>2+</sup> compensan las cargas de dos OH<sup>−</sup> y un SO<sub>4</sub><sup>2−</sup>.',['Cu2SO4(OH)2']);
+fixed('CaCl(OH)','Oxosal básica',{comp:hyph('cloruro-hidróxido de calcio')},'Ca<sup>2+</sup> con un Cl<sup>−</sup> y un OH<sup>−</sup>. Por orden alfabético: cloruro antes que hidróxido.');
+fixed('MgCl(OH)','Oxosal básica',{comp:hyph('cloruro-hidróxido de magnesio')},'Mg<sup>2+</sup> con un Cl<sup>−</sup> y un OH<sup>−</sup>.');
+fixed('FeCO3(OH)','Oxosal básica',{comp:hyph('carbonato-hidróxido de hierro(III)')},'Fe<sup>3+</sup> compensa un CO<sub>3</sub><sup>2−</sup> y un OH<sup>−</sup>.');
+fixed('Al(OH)SO4','Oxosal básica',{comp:hyph('hidróxido-sulfato de aluminio')},'Al<sup>3+</sup> compensa un OH<sup>−</sup> y un SO<sub>4</sub><sup>2−</sup>.',['AlSO4(OH)']);
 fixed('KNaSO4','Sal doble',{comp:['sulfato de potasio y sodio','tetraoxidosulfato de potasio y sodio']},'Dos cationes distintos (K<sup>+</sup> y Na<sup>+</sup>) sustituyen los dos H del ácido sulfúrico. Los cationes se escriben y se nombran por orden alfabético.');
 fixed('CaNa2(SO4)2','Sal doble',{comp:['sulfato de calcio y disodio','bis(sulfato) de calcio y disodio','bis(tetraoxidosulfato) de calcio y disodio']},'Un Ca<sup>2+</sup> y dos Na<sup>+</sup> aportan +4, que compensan dos SO<sub>4</sub><sup>2−</sup>.');
 fixed('CrNH4(SO4)2','Sal doble',{comp:['sulfato de amonio y cromo(III)','bis(sulfato) de amonio y cromo','bis(tetraoxidosulfato) de amonio y cromo']},'NH<sub>4</sub><sup>+</sup> y Cr<sup>3+</sup> aportan +4, que compensan dos SO<sub>4</sub><sup>2−</sup>.');
 fixed('KLiNaPO4','Sal triple',{comp:['fosfato de litio, potasio y sodio','tetraoxidofosfato de litio, potasio y sodio']},'Tres cationes de carga +1 sustituyen los tres H del ácido fosfórico. Se nombran por orden alfabético.');
 fixed('AlK(SO4)2','Sal doble',{comp:['sulfato de aluminio y potasio','bis(sulfato) de aluminio y potasio','bis(tetraoxidosulfato) de aluminio y potasio']},'Es el alumbre: Al<sup>3+</sup> y K<sup>+</sup> aportan +4, que compensan dos SO<sub>4</sub><sup>2−</sup>.',['KAl(SO4)2']);
 fixed('MgNH4PO4','Sal doble',{comp:['fosfato de amonio y magnesio','tetraoxidofosfato de amonio y magnesio']},'NH<sub>4</sub><sup>+</sup> y Mg<sup>2+</sup> aportan +3, que compensan un PO<sub>4</sub><sup>3−</sup>.');
-fixed('CaCl(ClO)','Sal doble',{comp:hyph('cloruro-hipoclorito de calcio')},'Ca<sup>2+</sup> con dos aniones distintos: Cl<sup>−</sup> y ClO<sup>−</sup>. Los aniones se nombran por orden alfabético.',['CaClClO']);
-fixed('AlBrCO3','Sal doble',{comp:hyph('bromuro-carbonato de aluminio')},'Al<sup>3+</sup> compensa un Br<sup>−</sup> y un CO<sub>3</sub><sup>2−</sup>.',['AlBr(CO3)']);
-fixed('Na6ClF(SO4)2','Sal múltiple',{comp:hyph('cloruro-fluoruro-bis(sulfato) de hexasodio','cloruro-fluoruro-bis(sulfato) de sodio')},'Seis Na<sup>+</sup> compensan Cl<sup>−</sup>, F<sup>−</sup> y dos SO<sub>4</sub><sup>2−</sup>.');
-fixed('PbCO3SO4','Sal doble',{comp:hyph('carbonato-sulfato de plomo(IV)')},'Pb<sup>4+</sup> compensa un CO<sub>3</sub><sup>2−</sup> y un SO<sub>4</sub><sup>2−</sup>.',['Pb(CO3)(SO4)']);
+fixed('CaCl(ClO)','Sal mixta',{comp:hyph('cloruro-hipoclorito de calcio')},'Ca<sup>2+</sup> con dos aniones distintos: Cl<sup>−</sup> y ClO<sup>−</sup>. Los aniones se nombran por orden alfabético.',['CaClClO']);
+fixed('AlBrCO3','Sal mixta',{comp:hyph('bromuro-carbonato de aluminio')},'Al<sup>3+</sup> compensa un Br<sup>−</sup> y un CO<sub>3</sub><sup>2−</sup>.',['AlBr(CO3)']);
+fixed('Na6ClF(SO4)2','Sal mixta',{comp:hyph('cloruro-fluoruro-bis(sulfato) de hexasodio','cloruro-fluoruro-bis(sulfato) de sodio')},'Seis Na<sup>+</sup> compensan Cl<sup>−</sup>, F<sup>−</sup> y dos SO<sub>4</sub><sup>2−</sup>.');
+fixed('PbCO3SO4','Sal mixta',{comp:hyph('carbonato-sulfato de plomo(IV)')},'Pb<sup>4+</sup> compensa un CO<sub>3</sub><sup>2−</sup> y un SO<sub>4</sub><sup>2−</sup>.',['Pb(CO3)(SO4)']);
+// ---- Sales hidratadas ----
+[['CuSO4·5H2O','sulfato de cobre(II)',5,'penta','Cu<sup>2+</sup> y SO<sub>4</sub><sup>2−</sup>'],['Na2CO3·10H2O','carbonato de sodio',10,'deca','2 Na<sup>+</sup> y CO<sub>3</sub><sup>2−</sup>'],['MgSO4·7H2O','sulfato de magnesio',7,'hepta','Mg<sup>2+</sup> y SO<sub>4</sub><sup>2−</sup>'],
+ ['CaSO4·2H2O','sulfato de calcio',2,'di','Ca<sup>2+</sup> y SO<sub>4</sub><sup>2−</sup>'],['CoCl2·6H2O','cloruro de cobalto(II)',6,'hexa','Co<sup>2+</sup> y 2 Cl<sup>−</sup>'],['FeSO4·7H2O','sulfato de hierro(II)',7,'hepta','Fe<sup>2+</sup> y SO<sub>4</sub><sup>2−</sup>'],
+ ['BaCl2·2H2O','cloruro de bario',2,'di','Ba<sup>2+</sup> y 2 Cl<sup>−</sup>'],['Na2SO4·10H2O','sulfato de sodio',10,'deca','2 Na<sup>+</sup> y SO<sub>4</sub><sup>2−</sup>']].forEach(([f,sal,n,p,io])=>{
+  add({f,course:5,block:'hidratadas',sub:'Sal hidratada',names:{adi:[sal+'—agua (1/'+n+')'],trad:[sal+' '+p+'hidrato']},
+    why:`La sal (${io}) incluye ${n} moléculas de agua por fórmula, que se escriben tras un punto centrado: ${fhtml(f)}. Se nombra como compuesto de adición, ${sal}—agua (1/${n}), o con el sufijo -hidrato: ${sal} ${p}hidrato.`});
+});
+// Variantes ortográficas que se aceptan igual: arsenato/arseniato, antimonato/antimoniato
+DB.forEach(c=>Object.keys(c.names).forEach(k=>{const extra=[];c.names[k].forEach(n=>{if(/arsenato/.test(n))extra.push(n.replace(/arsenato/g,'arseniato'));if(/antimonato/.test(n))extra.push(n.replace(/antimonato/g,'antimoniato'));});extra.forEach(x=>{if(!c.names[k].includes(x))c.names[k].push(x);});}));
 
 /* ---------- normalización y corrección ---------- */
 const SUBS={'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9'};
-const normF=s=>s.replace(/[₀-₉]/g,c=>SUBS[c]).replace(/\s+/g,'');
-const base=s=>s.toLowerCase().normalize('NFC').trim().replace(/\s+/g,' ');
+const normF=s=>s.replace(/[₀-₉]/g,c=>SUBS[c]).replace(/\s+/g,'').replace(/[.*•⋅∙]/g,'·');
+const base=s=>s.toLowerCase().normalize('NFC').trim().replace(/\s+/g,' ').replace(/\s*[—–-]+\s*agua\s*\(\s*/g,'—agua (').replace(/\(\s*1\s*\/\s*(\d+)\s*\)/g,'(1/$1)');
 const noSp=s=>s.replace(/\s*\(\s*/g,'(').replace(/\s*\)/g,')');
 const noAcc=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'');
 const allNames=c=>[].concat(...Object.values(c.names));
@@ -499,10 +512,20 @@ function checkName(c,input){
   const raw=base(input); if(!raw) return null;
   const orig=allNames(c), list=orig.map(base);
   if(list.includes(raw)) return {ok:true};
-  if(/hidr[oó]geno\s*\((?![^)]*oxido)[a-záéíóú]+\)|hidrógeno(?=[a-z])/.test(raw)){
-    const fixd=raw.replace(/hidr[oó]geno\s*\(([a-záéíóú]+)\)/g,(m,x)=>/oxido/.test(x)?m:'hidrogeno'+x).replace(/hidrógeno(?=[a-z(])/g,'hidrogeno');
-    const k=list.indexOf(fixd);
-    if(k>=0) return {ok:false,warn:'Se escribe todo junto, sin paréntesis y sin tilde: <b>'+orig[k]+'</b>. Los paréntesis solo se usan cuando lo que sigue es un nombre de adición, como en dihidrogeno(tetraoxidosulfato).'};
+  if((c.aq||[]).some(a=>noAcc(base(a))===noAcc(noSp(raw)))) return {ok:true,note:'Ese es el nombre de su <b>disolución acuosa</b>, no del compuesto. El compuesto puro se llama <b>'+namesOf(c)[0]+'</b>.'};
+  const bd=(c.bad||[]).find(b=>noAcc(base(b.n))===noAcc(noSp(raw)));
+  if(bd) return {ok:false,warn:bd.warn};
+  if(/hidrógeno(?=\s*\(|[a-z])/.test(raw)){
+    const k=list.indexOf(noSp(raw.replace(/hidrógeno(?=\s*\(|[a-z])/g,'hidrogeno')));
+    if(k>=0) return {ok:false,warn:'Dentro del nombre se escribe «hidrogeno», sin tilde: <b>'+orig[k]+'</b>.'};
+  }
+  if(/hidrogeno\s*\((?![^)]*oxido)[a-z]+\)/.test(raw)&&!list.includes(noSp(raw))){
+    const k=list.indexOf(noSp(raw.replace(/hidrogeno\s*\(([a-z]+)\)/g,'hidrogeno$1')));
+    if(k>=0) return {ok:false,warn:'Aquí va todo junto, sin paréntesis: <b>'+orig[k]+'</b>. Los paréntesis solo se usan con un nombre de adición, como en dihidrogeno(tetraoxidosulfato), o con un anión monoatómico, como en hidrogeno(sulfuro).'};
+  }
+  if(/orto/.test(raw)){
+    const k=list.indexOf(noSp(raw.replace(/orto/g,'')));
+    if(k>=0) return {ok:true,note:'Correcto, aunque el Libro Rojo de 2005 ya no usa el prefijo orto-: <b>'+orig[k]+'</b>.'};
   }
   if(/bicarbonato|bisulfato|bisulfito|bisulfuro/.test(raw)) return {ok:false,warn:'Ese nombre tradicional no lo admite la IUPAC. Se usa la nomenclatura de hidrógeno: '+namesOf(c)[0]+'.'};
   const al=(c.alts||[]).find(a=>{const b=base(a.n);return b===raw||b===noSp(raw)||noAcc(b)===noAcc(noSp(raw));});
@@ -528,13 +551,13 @@ function checkFormula(c,input){
   if(v.toLowerCase()===c.f.toLowerCase()) return {ok:false,warn:'Revisa mayúsculas y minúsculas en los símbolos: se escribe '+fhtml(c.f)+'.'};
   return {ok:false};
 }
-const LABELS={est:'Estequiométrica',comp:'Composición',stock:'Stock',carga:'Con carga del ion',hid:'De hidrógeno',adi:'De adición',trad:'Tradicional o aceptado'};
+const LABELS={est:'Estequiométrica',comp:'Composición',stock:'Stock',carga:'Con carga del ion',hid:'De hidrógeno',adi:'De adición',sus:'De sustitución',trad:'Nombre vulgar aceptado'};
 function namesHTML(c){
-  return '<ul>'+Object.keys(LABELS).filter(k=>c.names[k]).map(k=>'<li>'+LABELS[k]+': '+c.names[k].join(' · ')+'</li>').join('')+'</ul>';
+  return '<ul>'+Object.keys(LABELS).filter(k=>c.names[k]).map(k=>'<li>'+LABELS[k]+': '+c.names[k].join(' · ')+'</li>').join('')+(c.aq?'<li>Su disolución acuosa: '+c.aq.join(' · ')+'</li>':'')+'</ul>';
 }
-const namesOf=c=>['stock','est','comp','trad','hid','adi'].filter(k=>c.names[k]).map(k=>c.names[k][0]);
+const namesOf=c=>['stock','est','comp','trad','hid','sus','adi'].filter(k=>c.names[k]).map(k=>c.names[k][0]);
 function shownName(c){
-  const keys=(S.course<5?['est','comp','stock','trad','hid']:['est','comp','stock','trad','hid','adi']).filter(k=>c.names[k]);
+  const keys=(S.course<5?['est','comp','stock','trad','hid','sus']:['est','comp','stock','trad','hid','sus','adi']).filter(k=>c.names[k]);
   return c.names[pick(keys)][0];
 }
 function pickStrat(list){ const bl=[...new Set(list.map(c=>c.block))]; const b=pick(bl); return pick(list.filter(c=>c.block===b)); }
@@ -546,140 +569,177 @@ const pool=()=>DB.filter(c=>c.course<=S.course&&(S.block==='todos'||c.block===S.
 /* ---------- teoría ---------- */
 const SECTIONS=[
  {g:'Fundamentos',id:'no',t:'Números de oxidación',c:2},
- {g:'Fundamentos',id:'regla',t:'Regla general',c:2},
+ {g:'Fundamentos',id:'regla',t:'Secuencia y regla general',c:2},
  {g:'Fundamentos',id:'tipos',t:'Tipos de nomenclatura',c:2},
  {g:'Fundamentos',id:'simples',t:'Sustancias simples',c:2},
  {g:'Fundamentos',id:'iones',t:'Iones monoatómicos',c:2},
  {g:'Compuestos binarios',id:'hidruros',t:'Hidruros',c:2,block:'hidruros'},
  {g:'Compuestos binarios',id:'oxidos',t:'Óxidos',c:2,block:'oxidos'},
  
- {g:'Compuestos binarios',id:'sales',t:'Sales binarias',c:2,block:'sales'},
+ {g:'Compuestos binarios',id:'sales',t:'Otras combinaciones binarias',c:2,block:'sales'},
  {g:'Compuestos binarios',id:'peroxidos',t:'Peróxidos',c:4,block:'peroxidos'},
  {g:'Compuestos ternarios',id:'hidroxidos',t:'Hidróxidos',c:3,block:'hidroxidos'},
  {g:'Compuestos ternarios',id:'oxoacidos',t:'Oxoácidos',c:4,block:'oxoacidos'},
- {g:'Compuestos ternarios',id:'oxoespeciales',t:'Oxoácidos polihidratados y especiales',c:5,block:'oxoacidos'},
+ {g:'Compuestos ternarios',id:'oxoespeciales',t:'Más oxoácidos (Bachillerato)',c:5,block:'oxoacidos'},
  {g:'Compuestos ternarios',id:'oxosales',t:'Oxosales neutras',c:4,block:'oxosales'},
- {g:'Compuestos ternarios',id:'hidracidas',t:'Sales ácidas de hidrácidos',c:5,block:'salesacidas'},
- {g:'Compuestos superiores',id:'oxacidas',t:'Oxosales ácidas',c:5,block:'salesacidas'},
- {g:'Compuestos superiores',id:'basicas',t:'Oxosales básicas',c:5,block:'superiores'},
- {g:'Compuestos superiores',id:'dobles',t:'Sales dobles',c:5,block:'superiores'},
- {g:'Compuestos superiores',id:'ionesesp',t:'Iones especiales',c:5}
+ {g:'Compuestos ternarios',id:'hidracidas',t:'Hidrogenosales de calcogenuros',c:5,block:'salesacidas'},
+ {g:'Sales cuaternarias y mixtas',id:'oxacidas',t:'Oxosales ácidas',c:5,block:'salesacidas'},
+ {g:'Sales cuaternarias y mixtas',id:'basicas',t:'Oxosales básicas',c:5,block:'superiores'},
+ {g:'Sales cuaternarias y mixtas',id:'dobles',t:'Sales dobles, triples o mixtas',c:5,block:'superiores'},
+ {g:'Sales cuaternarias y mixtas',id:'hidratadas',t:'Sales hidratadas',c:5,block:'hidratadas'},
+ {g:'Iones',id:'ionesesp',t:'Oxoaniones y otros iones',c:5}
 ];
 const T=(rows,head)=>'<div class="tbl"><table><thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map((x,i)=>'<td>'+(i===0?fhtml(x):x)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
 const TP=(rows,head)=>'<div class="tbl"><table><thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(x=>'<td>'+x+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
 const TI=(rows,head)=>'<div class="tbl"><table><thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr><td>'+r[0]+'<sup>'+r[1]+'</sup></td>'+r.slice(2).map(x=>'<td>'+x+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
 const CROSS=(a,ao,b,bo,res,note)=>`<div class="cross"><span><span class="os pos">+${ao}</span>${a}</span><span><span class="os neg">−${bo}</span>${b}</span><span class="arrow">→</span><span>${fhtml(res)}</span>${note?'<span class="arrow" style="font-size:15px">'+note+'</span>':''}</div>`;
 const CONTENT={
- no:`<p>El número de oxidación es la carga hipotética que tendría un átomo si el compuesto fuera totalmente iónico. Es positivo si el átomo cede electrones y negativo si los capta. Sirve para saber en qué proporción se combinan los elementos y, por tanto, cuál es la fórmula.</p>
- <p>Un mismo elemento puede actuar con números de oxidación distintos según el compuesto:</p>
- ${T([['CH4','<span class="neg">−4</span>'],['CCl4','<span class="pos">+4</span>'],['CO','<span class="pos">+2</span>']],['Compuesto','N.º de oxidación del C'])}
- <div class="rule">En un compuesto neutro, la suma de los números de oxidación de todos los átomos es <b>cero</b>.</div>
+ no:`<p>El <b>número de oxidación</b> (o estado de oxidación) es la carga que tendría un átomo si todos sus enlaces con átomos de otros elementos se consideraran iónicos. El elemento más electronegativo del enlace tiene número de oxidación negativo, y el menos electronegativo, positivo. En los nombres se escribe en números romanos: hierro(III).</p>
+ <p>Sirve para saber en qué proporción se combinan los elementos y, por tanto, cuál es la fórmula. Un mismo elemento puede actuar con números de oxidación distintos según el compuesto:</p>
+ ${T([['CH4','x + 4·(+1) = 0 → <span class="neg">−4</span>'],['CCl4','x + 4·(−1) = 0 → <span class="pos">+4</span>'],['CO','x + (−2) = 0 → <span class="pos">+2</span>']],['Compuesto','N.º de oxidación del C'])}
+ <div class="rule">En un compuesto neutro, la suma de los números de oxidación de todos los átomos es <b>cero</b>. En un ion, es igual a su carga.</div>
+ <h3>Número de carga</h3>
+ <p>Es la carga de un ion, en números arábigos seguidos del signo: hierro(3+). Los iones poliatómicos tienen carga, no número de oxidación: el OH<sup>−</sup> tiene carga 1−.</p>
  <p>Tienes la lista de números de oxidación más habituales en la pestaña <b>Consulta</b>.</p>`,
- regla:`<p>En cualquier fórmula se escribe a la izquierda el elemento menos prioritario, con su número de oxidación positivo, y a la derecha el más prioritario, con el negativo.</p>
- <div class="rule">Se intercambian los números de oxidación, sin el signo, y se escriben como subíndices. Si se puede, se simplifica.</div>
+ regla:`<p>La IUPAC (Libro Rojo, tabla VI) ordena los elementos en una <b>secuencia</b>. En la fórmula se escribe a la izquierda el elemento que se alcanza último en esa secuencia y a la derecha el que se alcanza antes. En el nombre se cita primero el de la derecha, terminado en <i>-uro</i> (salvo el oxígeno: óxido), y después el de la izquierda.</p>
+ <div class="rule">Se intercambian los números de oxidación, sin el signo, y se escriben como subíndices. En los compuestos iónicos se simplifica si se puede; en los moleculares la fórmula indica los átomos reales y no se simplifica: N<sub>2</sub>O<sub>4</sub>, H<sub>2</sub>O<sub>2</sub>.</div>
  ${CROSS('Al',3,'O',2,'Al2O3')}
  ${CROSS('Cu',2,'S',2,'CuS','(Cu₂S₂ se simplifica)')}
- <h3>Orden de prioridad</h3>
- <p>Para los no metales se sigue la secuencia de la IUPAC 2005. Cuanto más a la derecha, más prioritario, y por tanto se escribe al final de la fórmula:</p>
+ <h3>Secuencia de los no metales</h3>
+ <p>Cuanto más a la derecha está un elemento en esta lista, antes se alcanza en la secuencia y más a la derecha se escribe en la fórmula:</p>
  <p class="seq">B · Si · C · Sb · As · P · N · H · Te · Se · S · O · I · Br · Cl · F</p>
- <p>Los metales siempre van delante de los no metales.</p>`,
- tipos:`<p>Usaremos, además de algunos nombres tradicionales admitidos, la <b>nomenclatura de composición</b>, que indica la proporción de los elementos de tres maneras:</p>
+ <p>Los metales siempre van delante de los no metales. La secuencia es solo un orden de colocación, no de electronegatividad: el O es más electronegativo que el Cl y, aun así, se escribe primero, OCl<sub>2</sub> (dicloruro de oxígeno).</p>
+ ${T([['NaCl','cloruro de sodio'],['OCl2','dicloruro de oxígeno'],['PCl3','tricloruro de fósforo'],['NH3','trihidruro de nitrógeno (azano)']],['Fórmula','Nombre'])}`,
+ tipos:`<p>La IUPAC (2005) admite tres sistemas: <b>composición</b>, <b>sustitución</b> y <b>adición</b>. Los nombres tradicionales solo se aceptan para los oxoácidos y sus aniones, además de unos pocos nombres vulgares (agua, amoniaco…).</p>
+ <p>La <b>nomenclatura de composición</b> indica la proporción de los elementos de tres maneras:</p>
  <h3>Con prefijos multiplicadores (estequiométrica)</h3>
- <p>mono-, di-, tri-, tetra-, penta-, hexa-, hepta-, octa-. El prefijo mono- solo se escribe cuando evita una ambigüedad: si el elemento de la derecha lleva subíndice 1 y el de la izquierda tiene varios números de oxidación.</p>
+ <p>mono-, di-, tri-, tetra-, penta-, hexa-, hepta-, octa-. En esta web, el prefijo mono- se escribe cuando evita una ambigüedad: si el elemento de la derecha lleva subíndice 1 y el de la izquierda tiene varios números de oxidación.</p>
  <div class="rule"><b>FeO</b>: monóxido de hierro. Hay dos óxidos de hierro, FeO y Fe<sub>2</sub>O<sub>3</sub>, y mono- indica cuál es.<br><b>LiH</b>: hidruro de litio, sin mono-. El litio solo actúa con +1, así que solo existe un hidruro de litio.</div>
  ${T([['Fe2O3','trióxido de dihierro'],['CO','monóxido de carbono'],['CuS','monosulfuro de cobre'],['NaCl','cloruro de sodio'],['PCl5','pentacloruro de fósforo']],['Fórmula','Nombre'])}
- <h3>Con número de oxidación (Stock)</h3>
- <p>Se indica entre paréntesis y en números romanos, pegado al nombre del elemento y sin espacio. Si el elemento solo tiene un número de oxidación, no se indica.</p>
+ <h3>Con número de oxidación</h3>
+ <p>Se indica en números romanos, entre paréntesis, pegado al nombre del elemento y sin espacio. Si el elemento solo tiene un número de oxidación, no se indica.</p>
  ${T([['Fe2O3','óxido de hierro(III)'],['FeO','óxido de hierro(II)'],['Li2O','óxido de litio']],['Fórmula','Nombre'])}
- <h3>Con la carga de los iones</h3>
- <p>Solo para compuestos iónicos en los que el metal puede formar varios cationes. Se indica la carga del catión entre paréntesis, primero el número y después el signo, también sin espacio.</p>
+ <h3>Con número de carga</h3>
+ <p>Solo para compuestos iónicos. Se indica la carga del catión entre paréntesis, primero el número y después el signo, también sin espacio.</p>
  ${T([['Fe2O3','óxido de hierro(3+)'],['CuCl2','cloruro de cobre(2+)'],['SnS2','sulfuro de estaño(4+)']],['Fórmula','Nombre'])}
- <p>Al escribir prefijos con óxido no se suprime la vocal: pentaóxido, heptaóxido. La única excepción admitida es <i>monóxido</i>.</p>`,
+ <p>Al escribir prefijos con óxido no se suprime la vocal: pentaóxido, heptaóxido. La única excepción admitida es <i>monóxido</i>.</p>
+ <h3>Nomenclatura de sustitución</h3>
+ <p>Parte de un <b>hidruro progenitor</b> (CH<sub>4</sub> metano, SiH<sub>4</sub> silano, NH<sub>3</sub> azano, PH<sub>3</sub> fosfano, H<sub>2</sub>S sulfano) y nombra con prefijos los átomos que sustituyen a los hidrógenos.</p>
+ ${T([['SiCl4','tetraclorosilano'],['PH2Cl','clorofosfano']],['Fórmula','Nombre de sustitución'])}
+ <h3>Nomenclatura de adición (Bachillerato)</h3>
+ <p>Nombra el átomo central y los ligandos unidos a él (hidroxido, oxido…), en orden alfabético y con prefijos. Se usa sobre todo para oxoácidos y oxoaniones. Dentro del nombre, el ligando pierde la tilde: hidróxido → dihidroxido, óxido → dioxido.</p>
+ ${T([['H2SO4','dihidroxidodioxidoazufre'],['HNO3','hidroxidodioxidonitrógeno']],['Fórmula','Nombre de adición'])}`,
  simples:`<p>Están formadas por átomos de un solo elemento.</p>
- <ul><li>Los gases nobles son monoatómicos: He, Ne, Ar, Kr, Xe, Rn.</li><li>Algunos no metales forman moléculas diatómicas: ${['H2','N2','O2','F2','Cl2','Br2','I2'].map(fhtml).join(', ')}.</li><li>Otros forman agregados mayores: ${['O3','S8','P4'].map(fhtml).join(', ')}.</li><li>Los metales se representan solo con su símbolo: Cu, Fe, Ag…</li></ul>
- ${T([['H2','dihidrógeno','hidrógeno'],['N2','dinitrógeno','nitrógeno'],['O2','dioxígeno','oxígeno'],['O3','trioxígeno','ozono'],['S8','octaazufre','azufre'],['P4','tetrafósforo','fósforo blanco']],['Fórmula','Estequiométrica','Común'])}`,
+ <ul><li>Los gases nobles son monoatómicos: He, Ne, Ar, Kr, Xe, Rn.</li><li>Algunos no metales forman moléculas diatómicas: ${['H2','N2','O2','F2','Cl2','Br2','I2'].map(fhtml).join(', ')}.</li><li>Otros forman agregados mayores: ${['O3','S8','P4'].map(fhtml).join(', ')}.</li><li>Los metales se representan solo con su símbolo: Cu, Sn, Fe, Ag…</li></ul>
+ ${T([['H2','dihidrógeno','—'],['F2','diflúor','—'],['Cl2','dicloro','—'],['Br2','dibromo','—'],['I2','diyodo','—'],['N2','dinitrógeno','—'],['O2','dioxígeno','oxígeno'],['O3','trioxígeno','ozono'],['S8','ciclo-octaazufre (octaazufre)','azufre α'],['P4','tetrafósforo','fósforo blanco']],['Fórmula','Composición','Nombre alternativo aceptado'])}`,
  iones:`<p>Los iones monoatómicos son átomos con carga. La carga se escribe entre paréntesis, pegada al nombre: primero el número y después el signo.</p>
- <h3>Cationes (iones positivos)</h3><p>Se nombran con el nombre del elemento y su carga.</p>
- ${TI([['Na','+','sodio(1+)'],['Fe','3+','hierro(3+)'],['Ag','+','plata(1+)']],['Ion','Nombre'])}
- <h3>Aniones (iones negativos)</h3><p>Se nombran con la terminación <i>-uro</i>, salvo el del oxígeno, que es <i>óxido</i>.</p>
- ${TI([['Cl','−','cloruro(1−)','cloruro'],['S','2−','sulfuro(2−)','sulfuro'],['N','3−','nitruro(3−)','nitruro'],['H','−','hidruro(1−)','hidruro'],['O','2−','óxido(2−)','óxido']],['Ion','Sistemático','Admitido'])}`,
- oxoacidos:`<p>Son ácidos que contienen oxígeno. Su fórmula general es H<sub>a</sub>X<sub>b</sub>O<sub>c</sub>, donde X suele ser un no metal (a veces un metal de transición, como Cr o Mn). Se pueden obtener sumando agua al óxido no metálico correspondiente:</p>
- <div class="cross" style="font-size:18px"><span>${fhtml('N2O5')} + ${fhtml('H2O')}</span><span class="arrow">→</span><span>${fhtml('H2N2O6')}</span><span class="arrow">→</span><span>${fhtml('HNO3')}</span></div>
+ <h3>Cationes (iones positivos)</h3><p>Se nombran con el nombre del elemento y su número de carga. Si el elemento solo forma un catión, la carga puede omitirse: Na<sup>+</sup>, sodio.</p>
+ ${TI([['Na','+','sodio(1+) · sodio'],['Ca','2+','calcio(2+) · calcio'],['Fe','2+','hierro(2+)'],['Fe','3+','hierro(3+)'],['Cu','+','cobre(1+)'],['Al','3+','aluminio(3+) · aluminio']],['Ion','Nombre'])}
+ <h3>Aniones (iones negativos)</h3><p>Se nombran con la raíz del elemento terminada en <i>-uro</i>, salvo el del oxígeno, que es <i>óxido</i>, con su número de carga si hace falta.</p>
+ ${TI([['Cl','−','cloruro(1−)','cloruro'],['F','−','fluoruro(1−)','fluoruro'],['S','2−','sulfuro(2−)','sulfuro'],['N','3−','nitruro(3−)','nitruro'],['H','−','hidruro(1−)','hidruro'],['O','2−','óxido(2−)','óxido']],['Ion','Con carga','Sin carga'])}`,
+ oxoacidos:`<p>Son ácidos que contienen oxígeno. Su fórmula general es H<sub>a</sub>X<sub>b</sub>O<sub>c</sub>, donde X es un no metal o un metal de transición con número de oxidación alto (Cr, Mn). Como procedimiento formal, se relacionan con el óxido correspondiente mediante la adición de agua:</p>
+ <div class="cross" style="font-size:18px"><span>${fhtml('N2O5')} + ${fhtml('H2O')}</span><span class="arrow">→</span><span>2 ${fhtml('HNO3')}</span></div>
  <h3>Número de oxidación del átomo central</h3>
  <div class="rule">z = (2·c − a) / b &nbsp;·&nbsp; en ${fhtml('H2SO4')}: z = (2·4 − 2)/1 = +6</div>
- <h3>Nomenclatura tradicional</h3>
- <p>Depende de cuántos números de oxidación positivos tenga el átomo central:</p>
- ${TP([['hipo- … -oso','el menor (+1)','ácido hipocloroso'],['… -oso','(+3)','ácido cloroso'],['… -ico','(+5)','ácido clórico'],['per- … -ico','el mayor (+7)','ácido perclórico']],['Prefijo y sufijo','N.º de oxidación del Cl','Ejemplo'])}
- <p>Con dos números de oxidación se usan solo -oso (el menor) e -ico (el mayor): ácido sulfuroso (+4) y sulfúrico (+6). Con uno solo, -ico: ácido carbónico.</p>
+ <p>La IUPAC permite nombrarlos de tres maneras: con su <b>nombre vulgar aceptado</b> (ácido sulfúrico), con la <b>nomenclatura de hidrógeno</b> y con la <b>nomenclatura de adición</b>. No se admiten la antigua nomenclatura sistemática ni la de Stock: «tetraoxosulfato(VI) de hidrógeno» es incorrecto.</p>
+ <h3>Nombres vulgares aceptados</h3>
+ <p>Dependen de cuántos números de oxidación puede presentar el átomo central:</p>
+ ${TP([['hipo- … -oso','el más bajo de cuatro','ácido hipocloroso (+1)'],['… -oso','el segundo de cuatro, o el más bajo de dos o tres','ácido cloroso (+3)'],['… -ico','el tercero de cuatro, el más alto de dos, o el único','ácido clórico (+5)'],['per- … -ico','el más alto de cuatro','ácido perclórico (+7)']],['Prefijo y sufijo','N.º de oxidación','Ejemplo'])}
+ ${TP([['Halógenos (Cl, Br, I)','+1','+3','+5','+7'],['Calcógenos (S, Se, Te)','','+4','+6',''],['N','','+3','+5',''],['P, As, Sb','','+3','+5',''],['C, Si','','','+4',''],['B','','','+3','']],['Elemento','hipo-…-oso','-oso','-ico','per-…-ico'])}
+ ${T([['HClO','ácido hipocloroso'],['HClO2','ácido cloroso'],['HClO3','ácido clórico'],['HClO4','ácido perclórico'],['H2SO3','ácido sulfuroso'],['H2SO4','ácido sulfúrico'],['HNO2','ácido nitroso'],['HNO3','ácido nítrico'],['H2CO3','ácido carbónico'],['H3PO4','ácido fosfórico']],['Fórmula','Nombre vulgar aceptado'])}
  <h3>Nomenclatura de hidrógeno</h3>
- <p>Se escribe «hidrogeno», sin tilde, con su prefijo, y a continuación, sin espacio y entre paréntesis, los oxígenos como «oxido» y el átomo central terminado en -ato.</p>
+ <p>Se escribe «hidrogeno», sin tilde, con su prefijo (si solo hay un H, no se pone mono-). A continuación, sin espacio y entre paréntesis, el anión en nomenclatura de adición: los oxígenos como «oxido» y el átomo central terminado en -ato. En los compuestos neutros no se escribe la carga al final.</p>
  <div class="rule">${fhtml('H2SO4')} → dihidrogeno(tetraoxidosulfato)</div>
- ${T([['HClO','ácido hipocloroso','hidrogeno(oxidoclorato)'],['HClO4','ácido perclórico','hidrogeno(tetraoxidoclorato)'],['H2SO3','ácido sulfuroso','dihidrogeno(trioxidosulfato)'],['HNO3','ácido nítrico','hidrogeno(trioxidonitrato)'],['H2CO3','ácido carbónico','dihidrogeno(trioxidocarbonato)'],['H3PO4','ácido fosfórico','trihidrogeno(tetraoxidofosfato)']],['Fórmula','Tradicional','De hidrógeno'])}
+ ${T([['HClO','hidrogeno(oxidoclorato)'],['HClO4','hidrogeno(tetraoxidoclorato)'],['H2SO3','dihidrogeno(trioxidosulfato)'],['HNO3','hidrogeno(trioxidonitrato)'],['H2CO3','dihidrogeno(trioxidocarbonato)'],['H3PO4','trihidrogeno(tetraoxidofosfato)']],['Fórmula','De hidrógeno'])}
  <h3>Nomenclatura de adición (Bachillerato)</h3>
- <p>Describe la estructura: el átomo central con los grupos unidos a él, por orden alfabético. Los −OH se nombran «hidroxido» y los =O, «oxido».</p>
- <div class="rule">${fhtml('H2SO4')} = SO<sub>2</sub>(OH)<sub>2</sub> → dihidroxidodioxidoazufre</div>
+ <p>Da información estructural: se nombran los grupos unidos al átomo central, por orden alfabético, y al final el átomo central. Los −OH se nombran «hidroxido» y los =O, «oxido». Los prefijos no cuentan para el orden alfabético.</p>
+ <div class="rule">${fhtml('H2SO4')} = [SO<sub>2</sub>(OH)<sub>2</sub>] → dihidroxidodioxidoazufre</div>
  ${T([['HNO3','hidroxidodioxidonitrógeno'],['H3PO4','trihidroxidooxidofósforo'],['HClO','hidroxidocloro']],['Fórmula','De adición'])}`,
- oxoespeciales:`<h3>Ácidos polihidratados (meta, di, orto)</h3>
- <p>Los óxidos de P, As, Sb, Si y B pueden combinarse con más de una molécula de agua. Para P, As y Sb:</p>
- ${TP([['anhídrido + 1 H<sub>2</sub>O','meta-','P<sub>2</sub>O<sub>5</sub> → HPO<sub>3</sub>, ácido metafosfórico'],['anhídrido + 2 H<sub>2</sub>O','di-','P<sub>2</sub>O<sub>5</sub> → H<sub>4</sub>P<sub>2</sub>O<sub>7</sub>, ácido difosfórico'],['anhídrido + 3 H<sub>2</sub>O','orto- (se puede omitir)','P<sub>2</sub>O<sub>5</sub> → H<sub>3</sub>PO<sub>4</sub>, ácido (orto)fosfórico']],['Reacción','Prefijo','Ejemplo'])}
- ${T([['HPO2','ácido metafosforoso','hidrogeno(dioxidofosfato)'],['H4P2O5','ácido difosforoso','tetrahidrogeno(pentaoxidodifosfato)'],['H4P2O7','ácido difosfórico','tetrahidrogeno(heptaoxidodifosfato)'],['H3AsO4','ácido arsénico','trihidrogeno(tetraoxidoarseniato)'],['H4SiO4','ácido (orto)silícico','tetrahidrogeno(tetraoxidosilicato)'],['H3BO3','ácido (orto)bórico','trihidrogeno(trioxidoborato)'],['H2B4O7','ácido tetrabórico','dihidrogeno(heptaoxidotetraborato)']],['Fórmula','Tradicional','De hidrógeno'])}
- <h3>Otros ácidos importantes</h3>
- ${T([['H2SeO4','ácido selénico'],['H2TeO3','ácido teluroso'],['H2N2O2','ácido hiponitroso'],['H2S2O7','ácido disulfúrico'],['H2S2O3','ácido tiosulfúrico'],['H2SO5','ácido peroxosulfúrico'],['H2S2O8','ácido peroxodisulfúrico'],['H2MnO4','ácido mangánico (Mn +6)'],['HMnO4','ácido permangánico (Mn +7)'],['HCrO2','ácido cromoso (Cr +3)'],['H2CrO4','ácido crómico (Cr +6)'],['H2Cr2O7','ácido dicrómico'],['HOCN','ácido ciánico'],['HSCN','ácido tiociánico'],['HCN','ácido cianhídrico']],['Fórmula','Nombre'])}`,
- oxosales:`<p>Derivan de un oxoácido al sustituir todos sus hidrógenos por un metal. Están formadas por un metal, un no metal y oxígeno: M<sub>a</sub>(X<sub>b</sub>O<sub>c</sub>)<sub>n</sub>. Se obtienen por neutralización de un oxoácido con un hidróxido.</p>
+ oxoespeciales:`<h3>Oxoácidos del P, As y Sb</h3>
+ <p>Su óxido puede combinarse con una, dos o tres moléculas de agua y dar oxoácidos distintos con el mismo número de oxidación:</p>
+ ${TP([['óxido + 1 H<sub>2</sub>O','meta-','P<sub>2</sub>O<sub>5</sub> + H<sub>2</sub>O → 2 HPO<sub>3</sub>'],['óxido + 2 H<sub>2</sub>O','di-','P<sub>2</sub>O<sub>5</sub> + 2 H<sub>2</sub>O → H<sub>4</sub>P<sub>2</sub>O<sub>7</sub>'],['óxido + 3 H<sub>2</sub>O','sin prefijo','P<sub>2</sub>O<sub>5</sub> + 3 H<sub>2</sub>O → 2 H<sub>3</sub>PO<sub>4</sub>']],['Reacción','Prefijo','Ejemplo'])}
+ <div class="rule">No todos tienen nombre vulgar aceptado. Con +3, solo el ácido sin prefijo de cada elemento (ácido fosforoso, arsenoso, antimonoso). Con +5, los tres del P (metafosfórico, difosfórico y fosfórico) y solo el sin prefijo del As y del Sb (ácido arsénico, antimónico). Los demás se nombran con la nomenclatura de hidrógeno o de adición. El prefijo orto- ya no se usa.</div>
+ ${T([['HPO2','—','hidrogeno(dioxidofosfato)'],['H4P2O5','—','tetrahidrogeno(pentaoxidodifosfato)'],['H3PO3','ácido fosforoso¹','trihidrogeno(trioxidofosfato)'],['H3AsO3','ácido arsenoso','trihidrogeno(trioxidoarsenato)'],['HPO3','ácido metafosfórico²','hidrogeno(trioxidofosfato)'],['H4P2O7','ácido difosfórico','tetrahidrogeno(heptaoxidodifosfato)'],['H3PO4','ácido fosfórico','trihidrogeno(tetraoxidofosfato)'],['HAsO3','—','hidrogeno(trioxidoarsenato)'],['H3AsO4','ácido arsénico','trihidrogeno(tetraoxidoarsenato)'],['H3SbO4','ácido antimónico','trihidrogeno(tetraoxidoantimonato)']],['Fórmula','Nombre vulgar aceptado','De hidrógeno'])}
+ <p style="font-size:15px;color:var(--muted)">¹ El H<sub>3</sub>PO<sub>3</sub> comercial es en realidad ácido fosfónico, PHO(OH)<sub>2</sub>. ² El ácido metafosfórico es en realidad un polímero, (HPO<sub>3</sub>)<sub>n</sub> (Libro Rojo, tabla IR-8.1).</p>
+ <h3>Oxoácidos del Si y del B</h3>
+ ${T([['H2SiO3','ácido metasilícico¹'],['H4SiO4','ácido silícico'],['HBO2','ácido metabórico¹'],['H3BO3','ácido bórico']],['Fórmula','Nombre vulgar aceptado'])}
+ <p style="font-size:15px;color:var(--muted)">¹ En realidad son polímeros, (H<sub>2</sub>SiO<sub>3</sub>)<sub>n</sub> y (HBO<sub>2</sub>)<sub>n</sub> (Libro Rojo, tabla IR-8.1).</p>
+ <h3>Oxoácidos del Se y del Te</h3>
+ ${T([['H2SeO3','ácido selenoso'],['H2SeO4','ácido selénico'],['H2TeO3','ácido teluroso'],['H2TeO4','ácido telúrico']],['Fórmula','Nombre vulgar aceptado'])}
+ <h3>Otros oxoácidos del azufre</h3>
+ ${T([['H2S2O3','ácido tiosulfúrico','tio-: un O sustituido por S'],['H2S2O7','ácido disulfúrico','di-: dos unidades de ácido sulfúrico unidas'],['H2S2O8','ácido peroxidisulfúrico','peroxi-: un −O− sustituido por −O−O−'],['H2SO5','ácido peroxisulfúrico','peroxi-: un −O− sustituido por −O−O−']],['Fórmula','Nombre vulgar aceptado','Qué indica el prefijo'])}
+ <h3>Oxoácidos del Mn y del Cr</h3>
+ <p>No tienen nombre vulgar aceptado («ácido permangánico», «ácido crómico»… no son correctos): se nombran con la nomenclatura de hidrógeno. Sí están aceptados los nombres de sus aniones: MnO<sub>4</sub><sup>−</sup> permanganato, MnO<sub>4</sub><sup>2−</sup> manganato(VI) (con el romano obligatorio, porque hay más de un manganato), CrO<sub>4</sub><sup>2−</sup> cromato y Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup> dicromato.</p>
+ ${T([['H2MnO4','dihidrogeno(tetraoxidomanganato)','manganato(VI)'],['HMnO4','hidrogeno(tetraoxidomanganato)','permanganato'],['H2CrO4','dihidrogeno(tetraoxidocromato)','cromato'],['H2Cr2O7','dihidrogeno(heptaoxidodicromato)','dicromato']],['Fórmula','De hidrógeno','Anión aceptado'])}
+ <h3>Otros ácidos</h3>
+ ${T([['HOCN','ácido ciánico'],['HSCN','ácido tiociánico'],['HCN','cianuro de hidrógeno¹']],['Fórmula','Nombre aceptado'])}
+ <p style="font-size:15px;color:var(--muted)">¹ El HCN no tiene nombre vulgar aceptado: se nombra como compuesto binario. «Ácido cianhídrico» podría usarse, en todo caso, para su disolución acuosa. Sus aniones son OCN<sup>−</sup> cianato, SCN<sup>−</sup> tiocianato y CN<sup>−</sup> cianuro.</p>`,
+ oxosales:`<p>Derivan de un oxoácido en el que todos los hidrógenos se sustituyen por un catión metálico. Están formadas por un catión metálico y un oxoanión: M<sub>a</sub>(X<sub>b</sub>O<sub>c</sub>)<sub>n</sub>.</p>
  <div class="rule">Al quitar los H, el anión se queda con tantas cargas negativas como H tenía el ácido: ${fhtml('H2SO4')} → SO<sub>4</sub><sup>2−</sup></div>
- <h3>Nomenclatura tradicional</h3>
- <p>El sufijo -oso del ácido cambia a -ito, y el -ico, a -ato. Los prefijos hipo- y per- se mantienen. Si el metal tiene varios números de oxidación, se indica con números romanos.</p>
+ <h3>Nombre vulgar aceptado</h3>
+ <p>El sufijo -oso del ácido cambia a -ito, y el -ico, a -ato. Los prefijos hipo- y per- se mantienen. Después se añade «de» y el metal, con su número de oxidación si hace falta: Fe<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>, sulfato de hierro(III).</p>
  ${TP([['ácido hipo… -oso','hipo… -ito'],['ácido … -oso','… -ito'],['ácido … -ico','… -ato'],['ácido per… -ico','per… -ato']],['Ácido','Anión'])}
  <h3>Nomenclatura de composición</h3>
- <p>Se nombra el anión como en la nomenclatura de hidrógeno (sin «hidrogeno») seguido del metal. Si hay varios aniones se usan los prefijos bis-, tris-, tetrakis-… con el anión entre paréntesis.</p>
- ${T([['NaNO3','trioxidonitrato de sodio','nitrato de sodio'],['CdSO3','trioxidosulfato de cadmio','sulfito de cadmio'],['Cu3(PO4)2','bis(tetraoxidofosfato) de tricobre','fosfato de cobre(II)'],['Sn(NO2)4','tetrakis(dioxidonitrato) de estaño','nitrito de estaño(IV)']],['Fórmula','Composición','Tradicional'])}`,
- hidracidas:`<p>Resultan de sustituir solo uno de los dos H de ${fhtml('H2S')}, ${fhtml('H2Se')} o ${fhtml('H2Te')} por un metal. El anión, HS<sup>−</sup>, se llama <b>hidrogenosulfuro</b>.</p>
- <div class="rule">«Hidrogeno» va unido al anión, sin tilde y sin paréntesis: hidrogenosulfuro. Formas como «hidrógeno(sulfuro)» no son correctas.</div>
- ${T([['NaHS','hidrogenosulfuro de sodio'],['Cu(HS)2','hidrogenosulfuro de cobre(II) · bis(hidrogenosulfuro) de cobre'],['Pb(HSe)2','hidrogenoselenuro de plomo(II)']],['Fórmula','Nombre'])}`,
+ <p>El anión en nomenclatura de adición y prefijos multiplicadores para las proporciones. Delante de un nombre que ya lleva prefijo se usan bis-, tris-, tetrakis-…, con el anión entre paréntesis: tris(tetraoxidosulfato) de dihierro.</p>
+ <h3>Nomenclatura de adición (Bachillerato)</h3>
+ <p>Sin prefijos multiplicadores: el anión lleva su número de carga y el metal, la suya: tetraoxidosulfato(2−) de hierro(3+).</p>
+ ${T([['NaNO3','trioxidonitrato de sodio','trioxidonitrato(1−) de sodio','nitrato de sodio'],['CdSO3','trioxidosulfato de cadmio','trioxidosulfato(2−) de cadmio','sulfito de cadmio'],['Cu3(PO4)2','bis(tetraoxidofosfato) de tricobre','tetraoxidofosfato(3−) de cobre(2+)','fosfato de cobre(II)'],['Sn(NO2)4','tetrakis(dioxidonitrato) de estaño','dioxidonitrato(1−) de estaño(4+)','nitrito de estaño(IV)']],['Fórmula','Composición','Adición','Nombre vulgar aceptado'])}`,
+ hidracidas:`<p>Son sales ácidas: resultan de sustituir solo uno de los dos H de ${fhtml('H2S')}, ${fhtml('H2Se')} o ${fhtml('H2Te')} por un metal. El anión HS<sup>−</sup>, HSe<sup>−</sup> o HTe<sup>−</sup> se nombra con la nomenclatura de hidrógeno o con la de sustitución.</p>
+ <div class="rule">«hidrogeno» va sin tilde. HS<sup>−</sup>: hidrogeno(sulfuro) (de hidrógeno) o sulfanuro (de sustitución). También se acepta la forma unida, hidrogenosulfuro.</div>
+ ${T([['NaHS','hidrogeno(sulfuro) de sodio','sulfanuro de sodio'],['Cu(HS)2','hidrogeno(sulfuro) de cobre(II)','sulfanuro de cobre(II)'],['Pb(HSe)2','hidrogeno(selenuro) de plomo(II)','selanuro de plomo(II)']],['Fórmula','De hidrógeno','De sustitución'])}`,
  oxacidas:`<p>Son sales que todavía conservan algún H del ácido. Derivan de la sustitución parcial de los H de un ácido poliprótico por metales.</p>
- <div class="cross" style="font-size:17px;flex-direction:column;align-items:flex-start;gap:6px"><span>${fhtml('H3PO4')} − H<sup>+</sup> → H<sub>2</sub>PO<sub>4</sub><sup>−</sup> → ${fhtml('NaH2PO4')}</span><span>${fhtml('H3PO4')} − 2 H<sup>+</sup> → HPO<sub>4</sub><sup>2−</sup> → ${fhtml('Na2HPO4')}</span><span>${fhtml('H3PO4')} − 3 H<sup>+</sup> → PO<sub>4</sub><sup>3−</sup> → ${fhtml('Na3PO4')}</span></div>
- <p>Se nombran anteponiendo «hidrogeno» (con su prefijo) al nombre del anión, todo junto. También vale la forma completa de la nomenclatura de hidrógeno.</p>
- ${T([['NaH2PO4','dihidrogenofosfato de sodio','dihidrogeno(tetraoxidofosfato) de sodio'],['Na2HPO4','hidrogenofosfato de sodio','hidrogeno(tetraoxidofosfato) de sodio'],['KHCO3','hidrogenocarbonato de potasio','hidrogeno(trioxidocarbonato) de potasio'],['Cr(HSO3)3','hidrogenosulfito de cromo(III)','hidrogeno(trioxidosulfato) de cromo(III)']],['Fórmula','Nombre aceptado','De hidrógeno'])}
+ <div class="cross" style="font-size:17px;flex-direction:column;align-items:flex-start;gap:6px"><span>${fhtml('H3PO4')} − H<sup>+</sup> → H<sub>2</sub>PO<sub>4</sub><sup>−</sup> (dihidrogenofosfato) → ${fhtml('NaH2PO4')}</span><span>${fhtml('H3PO4')} − 2 H<sup>+</sup> → HPO<sub>4</sub><sup>2−</sup> (hidrogenofosfato) → ${fhtml('Na2HPO4')}</span><span>${fhtml('H3PO4')} − 3 H<sup>+</sup> → PO<sub>4</sub><sup>3−</sup> (fosfato) → ${fhtml('Na3PO4')}, oxosal neutra</span></div>
+ <p>Se nombran con la nomenclatura de composición: se antepone «hidrogeno» (con su prefijo) al nombre aceptado del anión, todo junto. También vale la nomenclatura de hidrógeno, con prefijos de composición para el metal; si el anión ya lleva paréntesis, el multiplicador usa corchetes: tris[…].</p>
+ ${T([['Na2HPO4','hidrogenofosfato de sodio','hidrogeno(tetraoxidofosfato) de disodio'],['NaH2PO4','dihidrogenofosfato de sodio','dihidrogeno(tetraoxidofosfato) de sodio'],['KHCO3','hidrogenocarbonato de potasio','hidrogeno(trioxidocarbonato) de potasio'],['Cr(HSO3)3','hidrogenosulfito de cromo(III)','tris[hidrogeno(trioxidosulfato)] de cromo']],['Fórmula','Nombre aceptado','De hidrógeno'])}
  <p>Nombres tradicionales como «bicarbonato» no están admitidos por la IUPAC.</p>`,
- basicas:`<p>Son sales que contienen iones hidróxido, OH<sup>−</sup>, además del anión. La IUPAC recomienda la nomenclatura de composición: los aniones se nombran por orden alfabético, unidos por guion, y después el metal.</p>
- ${T([['MgNO3(OH)','hidróxido-nitrato de magnesio','hidroxinitrato de magnesio'],['Cu2(OH)2SO4','dihidróxido-sulfato de cobre(II)','dihidroxisulfato de cobre(II)'],['CaCl(OH)','cloruro-hidróxido de calcio','hidroxicloruro de calcio'],['FeCO3(OH)','carbonato-hidróxido de hierro(III)','hidroxicarbonato de hierro(III)']],['Fórmula','Composición','Nombre aceptado'])}`,
+ basicas:`<p>Contienen algún grupo hidróxido, OH<sup>−</sup>, además del anión. Se nombran con la nomenclatura de composición: los aniones, incluido el hidróxido, se citan por orden alfabético, separados por un espacio y sin guiones, y después el metal.</p>
+ ${T([['MgNO3(OH)','hidróxido nitrato de magnesio'],['Cu2(OH)2SO4','dihidróxido sulfato de cobre(II)'],['CaCl(OH)','cloruro hidróxido de calcio'],['FeCO3(OH)','carbonato hidróxido de hierro(III)']],['Fórmula','Nomenclatura de composición'])}`,
  dobles:`<h3>Con varios cationes</h3>
- <p>Se forman al sustituir los H de un ácido por cationes distintos. En la fórmula y en el nombre, los cationes van por orden alfabético.</p>
- ${T([['KNaSO4','sulfato de potasio y sodio'],['CaNa2(SO4)2','sulfato de calcio y disodio'],['CrNH4(SO4)2','sulfato de amonio y cromo(III)'],['KLiNaPO4','fosfato de litio, potasio y sodio']],['Fórmula','Nombre'])}
+ <p>Se forman al sustituir los H de un ácido por cationes distintos. Los cationes se citan por orden alfabético.</p>
+ ${T([['KNaSO4','sulfato de potasio y sodio','tetraoxidosulfato de potasio y sodio'],['CaNa2(SO4)2','sulfato de calcio y disodio','bis(tetraoxidosulfato) de calcio y disodio'],['CrNH4(SO4)2','sulfato de amonio y cromo(III)','bis(tetraoxidosulfato) de amonio y cromo'],['KLiNaPO4','fosfato de litio, potasio y sodio','tetraoxidofosfato de litio, potasio y sodio']],['Fórmula','Nombre vulgar aceptado','Composición'])}
  <h3>Con varios aniones</h3>
- <p>Un metal plurivalente se une a aniones distintos. Los aniones se nombran por orden alfabético, unidos por guion.</p>
- ${T([['CaCl(ClO)','cloruro-hipoclorito de calcio'],['AlBrCO3','bromuro-carbonato de aluminio'],['Na6ClF(SO4)2','cloruro-fluoruro-bis(sulfato) de hexasodio'],['PbCO3SO4','carbonato-sulfato de plomo(IV)']],['Fórmula','Nombre'])}`,
- ionesesp:`<p>Algunos iones poliatómicos aparecen con frecuencia formando compuestos y conviene conocer su nombre.</p>
- ${TP([['NH<sub>4</sub><sup>+</sup>','amonio'],['H<sub>3</sub>O<sup>+</sup>','oxonio'],['OH<sup>−</sup>','hidróxido'],['O<sub>2</sub><sup>2−</sup>','peróxido'],['S<sub>2</sub><sup>2−</sup>','disulfuro'],['S<sub>x</sub><sup>2−</sup>','polisulfuro'],['CN<sup>−</sup>','cianuro']],['Ion','Nombre'])}`,
+ <p>Un catión metálico se une a aniones distintos. Los aniones se citan por orden alfabético, separados por un espacio y sin guiones.</p>
+ ${T([['CaCl(ClO)','cloruro hipoclorito de calcio'],['AlBrCO3','bromuro carbonato de aluminio'],['Na6ClF(SO4)2','cloruro fluoruro bis(sulfato) de hexasodio'],['PbCO3SO4','carbonato sulfato de plomo(IV)']],['Fórmula','Nomenclatura de composición'])}`,
+ hidratadas:`<p>Son sales que incluyen en su red cristalina un número fijo de moléculas de agua (agua de cristalización). En la fórmula se separan con un punto centrado: CuSO<sub>4</sub>·5H<sub>2</sub>O.</p>
+ <div class="rule">Libro Rojo 2005 (IR-5.5): se nombran como compuestos de adición: nombre de la sal + —agua + la proporción entre paréntesis, (1/5). También se acepta el sufijo -hidrato con su prefijo: pentahidrato, decahidrato…</div>
+ <p>Al escribir la fórmula en los ejercicios puedes usar un punto normal (CuSO4.5H2O); se convierte en punto centrado.</p>
+ ${TP([['CuSO<sub>4</sub>·5H<sub>2</sub>O','sulfato de cobre(II)—agua (1/5)','sulfato de cobre(II) pentahidrato'],['Na<sub>2</sub>CO<sub>3</sub>·10H<sub>2</sub>O','carbonato de sodio—agua (1/10)','carbonato de sodio decahidrato'],['MgSO<sub>4</sub>·7H<sub>2</sub>O','sulfato de magnesio—agua (1/7)','sulfato de magnesio heptahidrato'],['CaSO<sub>4</sub>·2H<sub>2</sub>O','sulfato de calcio—agua (1/2)','sulfato de calcio dihidrato (yeso)']],['Fórmula','Nombre de adición (IUPAC 2005)','Nombre con -hidrato'])}`,
+ ionesesp:`<h3>Oxoaniones</h3>
+ <p>Derivan de los oxoácidos al perder sus H<sup>+</sup>. El nombre vulgar cambia la terminación: -oso → -ito e -ico → -ato. En nomenclatura de adición se nombran los ligandos, el átomo central terminado en -ato y la carga del ion.</p>
+ ${TP([['NO<sub>3</sub><sup>−</sup>','nitrato','trioxidonitrato(1−)'],['ClO<sub>2</sub><sup>−</sup>','clorito','dioxidoclorato(1−)'],['SO<sub>4</sub><sup>2−</sup>','sulfato','tetraoxidosulfato(2−)'],['CO<sub>3</sub><sup>2−</sup>','carbonato','trioxidocarbonato(2−)'],['PO<sub>4</sub><sup>3−</sup>','fosfato','tetraoxidofosfato(3−)'],['HCO<sub>3</sub><sup>−</sup>','hidrogenocarbonato','hidrogeno(trioxidocarbonato)(1−)'],['MnO<sub>4</sub><sup>−</sup>','permanganato','tetraoxidomanganato(1−)'],['Cr<sub>2</sub>O<sub>7</sub><sup>2−</sup>','dicromato','heptaoxidodicromato(2−)']],['Anión','Nombre vulgar aceptado','Nomenclatura de adición'])}
+ <h3>Otros iones con nombre aceptado</h3>
+ ${TP([['NH<sub>4</sub><sup>+</sup>','amonio (azanio)'],['H<sub>3</sub>O<sup>+</sup>','oxonio'],['OH<sup>−</sup>','hidróxido'],['O<sub>2</sub><sup>2−</sup>','peróxido o dióxido(2−)'],['S<sub>2</sub><sup>2−</sup>','disulfuro o disulfuro(2−)'],['CN<sup>−</sup>','cianuro']],['Ion','Nombre'])}`,
  hidroxidos:`<p>Compuestos formados por un metal y el ion hidróxido, ${fhtml('OH')}<sup>−</sup>. En agua dan disoluciones básicas, por eso también se llaman <b>bases</b>.</p>
  <div class="rule">El grupo OH actúa como una unidad con carga −1. Si hay más de uno, se escribe entre paréntesis.</div>
  <div class="cross"><span><span class="os pos">+3</span>Fe</span><span><span class="os neg">−1</span>OH</span><span class="arrow">→</span><span>${fhtml('Fe(OH)3')}</span></div>
- ${T([['NaOH','hidróxido de sodio','hidróxido de sodio'],['Ca(OH)2','dihidróxido de calcio','hidróxido de calcio'],['Fe(OH)3','trihidróxido de hierro','hidróxido de hierro(III)'],['Al(OH)3','trihidróxido de aluminio','hidróxido de aluminio']],['Fórmula','Estequiométrica','Stock'])}`,
- hidruros:`<p>Combinaciones del hidrógeno con cualquier otro elemento. Hay tres tipos.</p>
+ ${T([['NaOH','hidróxido de sodio','hidróxido de sodio','hidróxido de sodio'],['Ca(OH)2','dihidróxido de calcio','hidróxido de calcio','hidróxido de calcio'],['Fe(OH)3','trihidróxido de hierro','hidróxido de hierro(III)','hidróxido de hierro(3+)'],['Al(OH)3','trihidróxido de aluminio','hidróxido de aluminio','hidróxido de aluminio']],['Fórmula','Prefijos','N.º de oxidación','N.º de carga'])}
+ <p>Si el metal tiene un único número de oxidación (alcalinos y Ag: +1; alcalinotérreos y Zn: +2; Al: +3), no hace falta indicarlo.</p>`,
+ hidruros:`<p>Combinaciones del hidrógeno con otro elemento.</p>
  <h3>Hidruros metálicos</h3><p>El H actúa con <span class="neg">−1</span> y se escribe a la derecha.</p>
  ${CROSS('Fe',3,'H',1,'FeH3')}
- ${T([['CaH2','dihidruro de calcio','hidruro de calcio'],['LiH','hidruro de litio','hidruro de litio'],['FeH3','trihidruro de hierro','hidruro de hierro(III)']],['Fórmula','Estequiométrica','Stock'])}
- <h3>Hidrácidos (grupos 16 y 17)</h3><p>El H actúa con <span class="pos">+1</span> y va a la izquierda. El no metal termina en <i>-uro</i>. Disueltos en agua se nombran como ácidos terminados en <i>-hídrico</i>.</p>
- ${T([['HCl','cloruro de hidrógeno','ácido clorhídrico'],['HF','fluoruro de hidrógeno','ácido fluorhídrico'],['H2S','sulfuro de dihidrógeno','ácido sulfhídrico']],['Fórmula','Estequiométrica','En disolución'])}
- <h3>Hidruros volátiles (grupos 13, 14 y 15)</h3><p>Se escribe primero el no metal. Tienen nombres especiales aceptados por la IUPAC.</p>
- ${T([['NH3','trihidruro de nitrógeno','amoniaco · azano'],['PH3','trihidruro de fósforo','fosfano'],['CH4','tetrahidruro de carbono','metano'],['SiH4','tetrahidruro de silicio','silano']],['Fórmula','Estequiométrica','Aceptado'])}`,
- oxidos:`<p>Combinaciones del oxígeno, con número de oxidación <span class="neg">−2</span>, con cualquier elemento excepto los halógenos.</p>
- <h3>Óxidos metálicos (básicos)</h3>
+ ${T([['CaH2','dihidruro de calcio','hidruro de calcio'],['LiH','hidruro de litio','hidruro de litio'],['FeH3','trihidruro de hierro','hidruro de hierro(III)'],['SrH2','dihidruro de estroncio','hidruro de estroncio']],['Fórmula','Prefijos','N.º de oxidación'])}
+ <h3>Con los grupos 13, 14 y 15</h3><p>El H actúa con <span class="pos">+1</span> y se escribe a la derecha. Se nombran por composición o por sustitución (hidruros progenitores).</p>
+ ${T([['NH3','trihidruro de nitrógeno','azano (amoniaco)'],['PH3','trihidruro de fósforo','fosfano'],['AsH3','trihidruro de arsénico','arsano'],['SbH3','trihidruro de antimonio','estibano'],['CH4','tetrahidruro de carbono','metano'],['SiH4','tetrahidruro de silicio','silano'],['BH3','trihidruro de boro','borano']],['Fórmula','Prefijos','Sustitución'])}
+ <h3>Haluros y calcogenuros de hidrógeno (grupos 16 y 17)</h3><p>El H actúa con <span class="pos">+1</span>, se escribe primero y se nombra al final. Los nombres «ácido …hídrico» son de sus disoluciones en agua, no de los compuestos.</p>
+ ${T([['HF','fluoruro de hidrógeno','ácido fluorhídrico'],['HCl','cloruro de hidrógeno','ácido clorhídrico'],['HBr','bromuro de hidrógeno','ácido bromhídrico'],['HI','yoduro de hidrógeno','ácido yodhídrico'],['H2O','óxido de dihidrógeno (agua)','—'],['H2S','sulfuro de hidrógeno o de dihidrógeno','ácido sulfhídrico'],['H2Se','selenuro de hidrógeno o de dihidrógeno','—']],['Fórmula','Prefijos','Disolución acuosa'])}`,
+ oxidos:`<p>Combinaciones del oxígeno, con número de oxidación <span class="neg">−2</span> (−1 en los peróxidos), con cualquier elemento excepto los halógenos.</p>
+ <h3>Óxidos metálicos (de carácter básico)</h3>
  ${CROSS('Fe',3,'O',2,'Fe2O3')}
- ${T([['FeO','monóxido de hierro','óxido de hierro(II)'],['Fe2O3','trióxido de dihierro','óxido de hierro(III)'],['PbO2','dióxido de plomo','óxido de plomo(IV)'],['Li2O','óxido de dilitio','óxido de litio']],['Fórmula','Estequiométrica','Stock'])}
- <h3>Óxidos no metálicos (ácidos)</h3><p>Con no metales de los grupos 13 a 16. En la nomenclatura tradicional se llamaban anhídridos, pero la IUPAC no recomienda ese nombre.</p>
- ${T([['SO2','dióxido de azufre','óxido de azufre(IV)'],['SO3','trióxido de azufre','óxido de azufre(VI)'],['CO2','dióxido de carbono','óxido de carbono(IV)']],['Fórmula','Estequiométrica','Stock'])}
- <h3>Haluros de oxígeno</h3><p>Desde las recomendaciones de la IUPAC de 2005, las combinaciones de oxígeno con halógenos se escriben con el halógeno a la derecha y se nombran como haluros de oxígeno.</p>
+ ${T([['PbO2','dióxido de plomo','óxido de plomo(IV)'],['FeO','monóxido de hierro','óxido de hierro(II)'],['Fe2O3','trióxido de dihierro','óxido de hierro(III)'],['Li2O','óxido de dilitio','óxido de litio']],['Fórmula','Prefijos','N.º de oxidación'])}
+ <h3>Óxidos no metálicos (de carácter ácido)</h3><p>Con no metales de los grupos 13 a 16. El nombre tradicional <i>anhídrido</i> (anhídrido sulfúrico, carbónico…) no lo acepta la IUPAC; solo aparece en textos antiguos.</p>
+ ${T([['SO','monóxido de azufre','óxido de azufre(II)'],['SO2','dióxido de azufre','óxido de azufre(IV)'],['SO3','trióxido de azufre','óxido de azufre(VI)'],['CO2','dióxido de carbono','óxido de carbono(IV)']],['Fórmula','Prefijos','N.º de oxidación'])}
+ <h3>Halogenuros de oxígeno</h3><p>En la secuencia de los elementos, los halógenos se alcanzan antes que el oxígeno. Por eso el O se escribe primero y el halógeno se nombra con -uro. En ellos el O tiene n.º de oxidación −2, salvo con el F (OF<sub>2</sub>: +2).</p>
  ${T([['OCl2','Cl2O','dicloruro de oxígeno'],['O3Cl2','Cl2O3','dicloruro de trioxígeno'],['O5Br2','Br2O5','dibromuro de pentaoxígeno']],['IUPAC 2005','Antes','Nombre'])}`,
- peroxidos:`<p>Contienen el ion peróxido, ${fhtml('O2')}<sup>2−</sup>, en el que cada oxígeno tiene número de oxidación <span class="neg">−1</span>.</p>
- <div class="rule">Las fórmulas de los peróxidos <b>no se simplifican</b>: el grupo ${fhtml('O2')} se mantiene siempre.</div>
- ${T([['H2O2','dióxido de dihidrógeno','peróxido de hidrógeno (agua oxigenada)'],['BaO2','dióxido de bario','peróxido de bario'],['Na2O2','dióxido de disodio','peróxido de sodio'],['Sn(O2)2','bis(dióxido) de estaño','peróxido de estaño(IV)']],['Fórmula','Estequiométrica','Stock'])}`,
- sales:`<p>Combinaciones de dos elementos que no son ni H ni O. Cuando se unen un metal y un no metal se llaman sales binarias por su carácter iónico.</p>
- <p>El no metal va a la derecha con su número de oxidación negativo y su nombre termina en <i>-uro</i>.</p>
+ peroxidos:`<p>Contienen el grupo peróxido, ${fhtml('O2')}<sup>2−</sup> (−O−O−), unido a un metal o al hidrógeno. Cada oxígeno tiene número de oxidación <span class="neg">−1</span>.</p>
+ <div class="rule">Las fórmulas de los peróxidos <b>no se simplifican</b>: H<sub>2</sub>O<sub>2</sub>, no HO.</div>
+ ${T([['H2O2','dióxido de dihidrógeno','peróxido de hidrógeno'],['BaO2','dióxido de bario','peróxido de bario'],['Na2O2','dióxido de disodio','peróxido de sodio'],['Sn(O2)2','bis(dióxido) de estaño','peróxido de estaño(IV)']],['Fórmula','Prefijos','Con el ion peróxido'])}
+ <p>La disolución acuosa de H<sub>2</sub>O<sub>2</sub> se conoce comúnmente como agua oxigenada.</p>`,
+ sales:`<p>Combinaciones de dos elementos en las que no intervienen ni el oxígeno ni el hidrógeno. Cuando se unen un metal y un no metal tienen carácter iónico (sales binarias).</p>
+ <p>A la derecha va el elemento que se alcanza antes en la secuencia, con su número de oxidación negativo, y su nombre termina en <i>-uro</i>.</p>
  ${CROSS('Sn',4,'S',2,'SnS2','(Sn₂S₄ se simplifica)')}
- ${T([['LiF','fluoruro de litio','fluoruro de litio'],['AuBr3','tribromuro de oro','bromuro de oro(III)'],['Na2S','sulfuro de disodio','sulfuro de sodio'],['SnS2','disulfuro de estaño','sulfuro de estaño(IV)']],['Fórmula','Estequiométrica','Stock'])}
- <h3>Entre dos no metales</h3><p>Se escribe a la derecha el más prioritario según la secuencia de la IUPAC.</p>
- ${T([['BrF3','trifluoruro de bromo','fluoruro de bromo(III)'],['CCl4','tetracloruro de carbono','cloruro de carbono(IV)'],['As2Se3','triseleniuro de diarsénico','seleniuro de arsénico(III)']],['Fórmula','Estequiométrica','Stock'])}`
+ ${T([['LiF','fluoruro de litio','fluoruro de litio'],['AuBr3','tribromuro de oro','bromuro de oro(III)'],['Na2S','sulfuro de disodio','sulfuro de sodio'],['SnS2','disulfuro de estaño','sulfuro de estaño(IV)']],['Fórmula','Prefijos','N.º de oxidación'])}
+ <h3>Entre dos no metales</h3><p>Se escribe a la derecha el que se alcanza antes en la secuencia de la IUPAC.</p>
+ ${T([['BrF3','trifluoruro de bromo','fluoruro de bromo(III)'],['BrCl','(mono)cloruro de bromo','cloruro de bromo(I)'],['CCl4','tetracloruro de carbono','cloruro de carbono(IV)'],['As2Se3','triselenuro de diarsénico','selenuro de arsénico(III)']],['Fórmula','Prefijos','N.º de oxidación'])}`
 };
 const CNAME={2:'2º ESO',3:'3º ESO',4:'4º ESO',5:'Bachillerato'};
 function renderTheory(){
@@ -804,7 +864,7 @@ function renderRef(){
   $('#ref').innerHTML=`<div><h3>Metales</h3><div class="pt">${metal}</div></div>
   <div><h3>No metales</h3><div class="pt">${nm}</div></div>
   <div><h3>Prefijos multiplicadores</h3>${T([['1','mono-'],['2','di-'],['3','tri-'],['4','tetra-'],['5','penta-'],['6','hexa-'],['7','hepta-'],['8','octa-']],['N.º','Prefijo']).replace(/<sub>(\d)<\/sub>/g,'$1')}</div>
-  <div><h3>Prioridad de los no metales</h3><p class="seq">B · Si · C · Sb · As · P · N · H · Te · Se · S · O · I · Br · Cl · F</p><p style="color:var(--muted);font-size:15px">El más prioritario (a la derecha) se escribe al final de la fórmula con su número de oxidación negativo.</p></div>`;
+  <div><h3>Secuencia de los no metales (IUPAC, tabla VI)</h3><p class="seq">B · Si · C · Sb · As · P · N · H · Te · Se · S · O · I · Br · Cl · F</p><p style="color:var(--muted);font-size:15px">El que está más a la derecha se alcanza antes en la secuencia y se escribe al final de la fórmula. Es un orden de colocación, no de electronegatividad: OCl<sub>2</sub>.</p></div>`;
 }
 
 /* ---------- navegación ---------- */
